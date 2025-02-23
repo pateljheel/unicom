@@ -9,6 +9,6 @@ terraform {
 
 provider "aws" {
   # Configuration options
-  region  = "us-east-1"
-  profile = "unifamily"
+  region  = var.app_region
+  profile = var.aws_profile
 }

@@ -7,14 +7,20 @@
 #   description = "Application environment"
 #   type        = string
 # }
-# variable "app_region" {
-#   description = "Application region"
-#   type        = string
-# }
+variable "app_region" {
+  description = "Application region"
+  type        = string
+  default     = "us-east-1"
+}
 # variable "additional_tags" {
 #   description = "Additional tags to be applied to all resources"
 #   type        = map(string)
 # }
+variable "aws_profile" {
+  description = "AWS profile to use"
+  type        = string
+  default     = "default"
+}
 
 
 # # vpc variables

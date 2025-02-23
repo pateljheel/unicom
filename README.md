@@ -20,7 +20,7 @@ This is the source repository for application and infrastructure code.
 
 - State management for developers:
 
-    ```bash
+    ```sh
     # each developer must work in their own terraform workspace
     # name of the workspace can be anything related to their name, all uncased
 
@@ -32,8 +32,12 @@ This is the source repository for application and infrastructure code.
 
     The backend key in the bucket will be automatically selected based on the workspace name. Read https://developer.hashicorp.com/terraform/cli/workspaces for more details.
 
-- Single S3 bucket will be used for state management for all the developers. Bucket policy is configured to allow cross account users to access it. Following S3 policy must be applied to the state bucket.
+- Single S3 bucket will be used for state management for all the developers. Instead of bucket policy, create new user in the bucket account and configure new profile using the user keys.
 
-    ```json
-    
+    ```sh
+    aws configure --profile unifamily
     ```
+
+    In `backend.tf` `unifamily` profile is set for backend bucket.
+
+- In `provider.tf` use `default` profile to launch resources in your own account or use `unifamily` profile to launch resources in the central (bucket) account.
