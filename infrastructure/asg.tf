@@ -1,7 +1,7 @@
 locals {
-  asg_vpc_id = "vpc-0a8aa856369966521"
-  # asg_private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets
-  asg_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
+  asg_vpc_id = aws_vpc.main.id
+  asg_private_subnets = aws_subnet.public_subnets.*.id
+  # asg_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
 }
 
 # ASG template

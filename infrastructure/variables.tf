@@ -10,7 +10,7 @@ variable "app_environment" {
 variable "app_region" {
   description = "Application region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 variable "additional_tags" {
   description = "Additional tags to be applied to all resources"
@@ -24,30 +24,30 @@ variable "aws_profile" {
 }
 
 
-# # vpc variables
-# variable "vpc_cidr" {
-#   description = "CIDR block for the VPC"
-#   type        = string
-# }
+# vpc variables
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
 
-# variable "public_subnets" {
-#     description = "List of maps containing public subnet CIDR blocks and AZs"
-#     type        = list(object({
-#         cidr_block = string
-#         availability_zone = string
-#     }))
-# }
-# variable "private_subnets" {
-#     description = "List of maps containing private subnet CIDR blocks and AZs"
-#     type        = list(object({
-#         cidr_block = string
-#         availability_zone = string
-#     }))
-# }
-# variable "nat_gateways" {
-#     description = "Nat gateway subnets"
-#     type        = list(string)
-# }
+variable "public_subnet_cidrs" {
+  type        = list(string)
+  description = "Public Subnet CIDR values"
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  type        = list(string)
+  description = "Private Subnet CIDR values"
+  default     = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+}
+
+variable "azs" {
+  type        = list(string)
+  description = "Availability Zones"
+  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
+}
 
 
 # ec2 variables
