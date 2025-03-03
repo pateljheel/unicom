@@ -1,8 +1,8 @@
 locals {
-    # alb_private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets
-    # alb_vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
-    alb_vpc_id = "vpc-0a8aa856369966521"
-    alb_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
+  # alb_private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets
+  # alb_vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+  alb_vpc_id          = "vpc-0a8aa856369966521"
+  alb_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
 }
 
 # ALB
@@ -75,13 +75,13 @@ resource "aws_security_group" "alb_sg" {
   description = "Security group for the ALB"
   vpc_id      = local.alb_vpc_id
 
-    tags = merge(
-        var.additional_tags,
-        {
-        "Name"        = "${var.app_name}-${var.app_environment}-alb-sg",
-        "Environment" = var.app_environment,
-        }
-    )
+  tags = merge(
+    var.additional_tags,
+    {
+      "Name"        = "${var.app_name}-${var.app_environment}-alb-sg",
+      "Environment" = var.app_environment,
+    }
+  )
 }
 
 # Allow all outbound
@@ -92,5 +92,5 @@ resource "aws_security_group_rule" "alb_allow_all_outbound" {
   to_port           = 0
   security_group_id = aws_security_group.alb_sg.id
   cidr_blocks       = ["0.0.0.0/0"]
-    description = "Allow all outbound"
+  description       = "Allow all outbound"
 }

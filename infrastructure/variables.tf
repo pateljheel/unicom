@@ -61,12 +61,15 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
-# variable "key_name" {
-#   description = "Key pair name for SSH access to the EC2 instance"
-#   type        = string
-# }
+variable "key_name" {
+  description = "Key pair name for SSH access to the EC2 instance"
+  type        = string
+  default     = null
+}
 variable "health_check_path" {
   description = "Health check path for the ALB"
   type        = string
   default     = "/"
 }
+
+# api gateway variables
