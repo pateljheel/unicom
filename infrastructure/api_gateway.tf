@@ -1,12 +1,46 @@
 locals {
-  api_subnets     = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
-  vpc_link_sgs    = []
-  api_gateway_sgs = []
+  api_subnets     = aws_subnet.private_subnets[*].id
+  api_vpc_id      = aws_vpc.main.id
+}
+
+resource "aws_security_group" "vpc_link_sg" {
+  name        = "${var.app_name}-${var.app_environment}-vpc-link-sg"
+  description = "Security group for VPC link"
+  vpc_id      = local.api_vpc_id
+
+  tags = merge(
+    var.additional_tags,
+    {
+      "Name"        = "${var.app_name}-${var.app_environment}-vpc-link-sg",
+      "Environment" = var.app_environment,
+    }
+  )
+}
+
+# Allow HTTPS from everywhere
+resource "aws_security_group_rule" "vpc_link_allow_https" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 443
+  to_port           = 443
+  security_group_id = aws_security_group.vpc_link_sg.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow HTTPS from everywhere"
+}
+# Allow all outbound
+resource "aws_security_group_rule" "vpc_link_allow_all_outbound" {
+  type              = "egress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  security_group_id = aws_security_group.vpc_link_sg.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow all outbound"
 }
 
 resource "aws_apigatewayv2_vpc_link" "alb_vpc_link" {
   name               = "${var.app_name}-${var.app_environment}-api-vpc-link"
-  security_group_ids = local.vpc_link_sgs
+  security_group_ids = [aws_security_group.vpc_link_sg.id]
   subnet_ids         = local.api_subnets
 
   tags = merge(
@@ -26,16 +60,9 @@ resource "aws_apigatewayv2_api" "http_api" {
 
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http_api.id
-  name        = var.app_environment
+  name        = "$default"
   auto_deploy = true
 }
-
-# resource "aws_apigatewayv2_integration" "http_integration" {
-#   api_id             = aws_apigatewayv2_api.http_api.id
-#   integration_type   = "HTTP_PROXY"
-#   integration_uri    = "https://example.com"
-#   integration_method = "ANY"
-# }
 
 resource "aws_apigatewayv2_integration" "alb_integration" {
   api_id           = aws_apigatewayv2_api.http_api.id
@@ -53,34 +80,29 @@ resource "aws_apigatewayv2_integration" "alb_integration" {
 
   request_parameters = {
     "append:header.authforintegration" = "$context.authorizer.authorizerResponse"
-    "overwrite:path"                   = "staticValueForIntegration"
   }
 
-  # response_parameters {
-  #   status_code = 403
-  #   mappings = {
-  #     "append:header.auth" = "$context.authorizer.authorizerResponse"
-  #   }
-  # }
+  depends_on = [ aws_apigatewayv2_vpc_link.alb_vpc_link ]
+}
 
-  response_parameters {
-    status_code = 200
-    mappings = {
-      "overwrite:statuscode" = "204"
-    }
+resource "aws_apigatewayv2_authorizer" "jwt_authorizer" {
+  name                       = "${var.app_name}-${var.app_environment}-jwt-authorizer"
+  api_id                     = aws_apigatewayv2_api.http_api.id
+  authorizer_type            = "JWT"
+  identity_sources           = ["$request.header.Authorization"]
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.userpool_client.id]
+    issuer   = "https://cognito-idp.${var.app_region}.amazonaws.com/${aws_cognito_user_pool.userpool.id}"
   }
 }
 
-# resource "aws_apigatewayv2_route" "hello_route" {
-#   api_id    = aws_apigatewayv2_api.http_api.id
-#   route_key = "GET /hello"
-#   target    = "integrations/${aws_apigatewayv2_integration.http_integration.id}"
-# }
+resource "aws_apigatewayv2_route" "proxy_route" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "ANY /{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
 
-output "api_gateway_url" {
-  value = aws_apigatewayv2_stage.default.invoke_url
+  authorizer_id       = aws_apigatewayv2_authorizer.jwt_authorizer.id
+  authorization_type  = "JWT"
 }
 
-output "api_gateway_arn" {
-  value = aws_apigatewayv2_stage.default.arn
-}

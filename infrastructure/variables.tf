@@ -91,3 +91,8 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+variable "db_skip_final_snapshot" {
+  description = "Skip final snapshot for DocumentDB"
+  type        = bool
+  default     = true
+}

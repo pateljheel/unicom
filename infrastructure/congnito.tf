@@ -6,11 +6,17 @@ resource "aws_cognito_user_pool" "userpool" {
   }
 
   schema {
-    name                = "email"
-    attribute_data_type = "String"
-    mutable             = true
+    name                     = "email"
+    attribute_data_type      = "String"
+    mutable                  = true
     developer_only_attribute = false
   }
+
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+  }
+
+  auto_verified_attributes = ["email"]
 
   email_configuration {
     email_sending_account = "COGNITO_DEFAULT"
@@ -32,39 +38,45 @@ resource "aws_cognito_user_pool" "userpool" {
       priority = 1
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      schema,
+    ]
+  }
 }
 
 resource "aws_cognito_user_pool_client" "userpool_client" {
   name = "${var.app_name}-${var.app_environment}-userpool-client"
 
-  user_pool_id = aws_cognito_user_pool.userpool.id
-  supported_identity_providers = ["COGNITO"]
-  explicit_auth_flows = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
-  generate_secret = false
+  user_pool_id                  = aws_cognito_user_pool.userpool.id
+  supported_identity_providers  = ["COGNITO"]
+  explicit_auth_flows           = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
+  generate_secret               = false
   prevent_user_existence_errors = "LEGACY"
-  refresh_token_validity = 30
-  access_token_validity = 1
-  id_token_validity = 1
+  refresh_token_validity        = 30
+  access_token_validity         = 1
+  id_token_validity             = 1
   token_validity_units {
     access_token  = "days"
     id_token      = "days"
     refresh_token = "days"
   }
-  callback_urls = ["http://localhost:3000/callback"]
+  callback_urls = ["${aws_apigatewayv2_stage.default.invoke_url}"]
   logout_urls   = ["http://localhost:3000/logout"]
 
   allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_flows = ["code"]
-  allowed_oauth_scopes = ["email"]
- 
+  allowed_oauth_flows                  = ["implicit"]
+  allowed_oauth_scopes                 = ["email", "openid", "profile"]
+
 }
 
 resource "aws_lambda_function" "pre_signup_lambda" {
-  filename         = "pre_signup.zip"
-  function_name    = "PreSignupLambda"
-  role             = aws_iam_role.lambda_role.arn
-  handler         = "pre_signup.lambda_handler"
-  runtime         = "python3.11"
+  filename      = "scripts/pre_signup_lambda.zip"
+  function_name = "PreSignupLambda"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "pre_signup_lambda.lambda_handler"
+  runtime       = "python3.11"
 
   source_code_hash = filebase64sha256("scripts/pre_signup_lambda.zip")
 }
@@ -96,15 +108,15 @@ resource "aws_cognito_user_pool_domain" "userpool_domain" {
 }
 
 resource "aws_iam_role_policy" "lambda_cognito_permissions" {
-  name   = "lambda_cognito_policy"
-  role   = aws_iam_role.lambda_role.id
+  name = "lambda_cognito_policy"
+  role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "cognito-idp:ListUsers",
           "cognito-idp:AdminUpdateUserAttributes",
           "cognito-idp:AdminCreateUser",

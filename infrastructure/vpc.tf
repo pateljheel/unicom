@@ -76,3 +76,47 @@ resource "aws_route_table_association" "public_subnet_asso" {
   subnet_id      = element(aws_subnet.public_subnets[*].id, count.index)
   route_table_id = aws_route_table.public_subnets_rt.id
 }
+
+resource "aws_eip" "nat_eips" {
+  count  = length(var.public_subnet_cidrs)
+  domain = "vpc"
+
+  tags = {
+    Name        = "${var.app_name}-${var.app_environment}-nat-eip-${count.index}",
+    Environment = var.app_environment,
+  }
+}
+
+resource "aws_nat_gateway" "nat_gws" {
+  count         = length(var.public_subnet_cidrs)
+  allocation_id = aws_eip.nat_eips[count.index].id
+  subnet_id     = aws_subnet.public_subnets[count.index].id
+
+  tags = {
+    Name        = "${var.app_name}-${var.app_environment}-nat-gateway-${count.index}",
+    Environment = var.app_environment,
+  }
+
+  depends_on = [aws_internet_gateway.igw]
+}
+
+resource "aws_route_table" "private_rts" {
+  count  = length(var.private_subnet_cidrs)
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gws[count.index].id
+  }
+
+  tags = {
+    Name        = "${var.app_name}-${var.app_environment}-private-rt-${count.index}",
+    Environment = var.app_environment,
+  }
+}
+
+resource "aws_route_table_association" "private_asso" {
+  count          = length(var.private_subnet_cidrs)
+  subnet_id      = aws_subnet.private_subnets[count.index].id
+  route_table_id = aws_route_table.private_rts[count.index].id
+}

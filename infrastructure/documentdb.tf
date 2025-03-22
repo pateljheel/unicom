@@ -1,7 +1,6 @@
 locals {
   db_vpc_id          = aws_vpc.main.id
-  db_private_subnets = aws_subnet.public_subnets.*.id
-  # asg_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
+  db_private_subnets = aws_subnet.private_subnets.*.id
 }
 
 resource "aws_docdb_subnet_group" "db_subnet_group" {
@@ -23,9 +22,10 @@ resource "aws_docdb_cluster" "db_cluster" {
   engine                  = "docdb"
   master_username         = var.db_username
   master_password_wo      = var.db_password
-  backup_retention_period = 5
+  backup_retention_period = 1
   preferred_backup_window = "07:00-09:00"
   db_subnet_group_name    = aws_docdb_subnet_group.db_subnet_group.name
+  skip_final_snapshot     = var.db_skip_final_snapshot
 
   tags = merge(
     var.additional_tags,
