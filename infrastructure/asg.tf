@@ -1,7 +1,6 @@
 locals {
   asg_vpc_id = aws_vpc.main.id
-  asg_private_subnets = aws_subnet.public_subnets.*.id
-  # asg_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
+  asg_private_subnets = aws_subnet.private_subnets.*.id
 }
 
 # ASG template
@@ -119,13 +118,13 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   description = "Allow HTTP from internal load balancer"
 }
 
-# # Allow SSH from everywhere
-# resource "aws_security_group_rule" "allow_ssh" {
-#   type              = "ingress"
-#   protocol          = "tcp"
-#   from_port         = 22
-#   to_port           = 22
-#   security_group_id = aws_security_group.asg_sg.id
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   description = "Allow SSH from everywhere"
-# }
+# Allow SSH from everywhere
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  security_group_id = aws_security_group.asg_sg.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description = "Allow SSH from everywhere"
+}

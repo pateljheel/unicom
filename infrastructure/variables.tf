@@ -34,19 +34,19 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   type        = list(string)
   description = "Public Subnet CIDR values"
-  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   type        = list(string)
   description = "Private Subnet CIDR values"
-  default     = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+  default     = ["10.0.4.0/24", "10.0.5.0/24"]
 }
 
 variable "azs" {
   type        = list(string)
   description = "Availability Zones"
-  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
+  default     = ["us-east-2a", "us-east-2b"]
 }
 
 
@@ -73,3 +73,26 @@ variable "health_check_path" {
 }
 
 # api gateway variables
+
+
+# documentdb variables
+variable "db_instance_class" {
+  description = "Instance class for DocumentDB"
+  type        = string
+  default     = "db.r5.large"
+}
+variable "db_username" {
+  description = "Master username for DocumentDB"
+  type        = string
+  sensitive   = true
+}
+variable "db_password" {
+  description = "Master password for DocumentDB"
+  type        = string
+  sensitive   = true
+}
+variable "db_skip_final_snapshot" {
+  description = "Skip final snapshot for DocumentDB"
+  type        = bool
+  default     = true
+}
