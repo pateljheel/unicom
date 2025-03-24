@@ -1,5 +1,5 @@
 # global variables
-app_name = "unifamily"
+app_name = "unicom"
 app_environment = "dev"
 app_region = "us-east-2"
 
@@ -12,3 +12,8 @@ key_name = "swen-614-activity-key" # Change this to your key name
 db_username = "unicom"
 db_password = "password1234" # Change this to a secure password
 db_instance_class = "db.t3.medium"
+
+# s3 variables
+website_bucket_name = "unicom-website"
+images_bucket_name = "unicom-images"
+draft_images_bucket_name = "unicom-draft-images"

@@ -96,3 +96,20 @@ variable "db_skip_final_snapshot" {
   type        = bool
   default     = true
 }
+
+
+# s3 variables
+variable "website_bucket_name" {
+  description = "S3 bucket name"
+  type        = string
+}
+
+variable "images_bucket_name" {
+  description = "S3 bucket name for images"
+  type        = string
+}
+
+variable "draft_images_bucket_name" {
+  description = "S3 bucket name for draft images"
+  type        = string
+}
