@@ -40,3 +40,6 @@ terraform.rc
 env/
 venv/
 __pycache__/
+
+# Ignore node directory
+node_modules/
