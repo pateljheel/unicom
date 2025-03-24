@@ -1,5 +1,5 @@
 locals {
-  asg_vpc_id = aws_vpc.main.id
+  asg_vpc_id          = aws_vpc.main.id
   asg_private_subnets = aws_subnet.private_subnets.*.id
 }
 
@@ -23,6 +23,10 @@ resource "aws_launch_template" "asg_template" {
     associate_public_ip_address = false
     device_index                = 0
     security_groups             = [aws_security_group.asg_sg.id]
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.asg_instance_profile.name
   }
 
   key_name = var.key_name
@@ -126,5 +130,36 @@ resource "aws_security_group_rule" "allow_ssh" {
   to_port           = 22
   security_group_id = aws_security_group.asg_sg.id
   cidr_blocks       = ["0.0.0.0/0"]
-  description = "Allow SSH from everywhere"
+  description       = "Allow SSH from everywhere"
+}
+
+resource "aws_iam_role" "asg_instance_role" {
+  name = "${var.app_name}-${var.app_environment}-asg-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.app_name}-${var.app_environment}-asg-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = aws_iam_policy.s3_full_access_policy.arn
+}
+
+resource "aws_iam_instance_profile" "asg_instance_profile" {
+  name = "${var.app_name}-${var.app_environment}-asg-instance-profile"
+  role = aws_iam_role.asg_instance_role.name
 }
