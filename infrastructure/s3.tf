@@ -49,6 +49,8 @@ resource "aws_s3_bucket_policy" "public_policy" {
       }
     ]
   })
+
+  depends_on = [ aws_s3_bucket_public_access_block.public_access ]
 }
 
 resource "aws_s3_bucket" "images_bucket" {

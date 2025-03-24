@@ -3,6 +3,12 @@ app_name = "unicom"
 app_environment = "dev"
 app_region = "us-east-2"
 
+# vpc variables
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.4.0/24", "10.0.5.0/24"]
+azs = ["us-east-2a", "us-east-2b"]
+
 # ec2 variables
 # ami_id = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
 # instance_type = "t3.micro"

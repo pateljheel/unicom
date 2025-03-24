@@ -62,8 +62,8 @@ resource "aws_cognito_user_pool_client" "userpool_client" {
     id_token      = "days"
     refresh_token = "days"
   }
-  callback_urls = ["${aws_apigatewayv2_stage.default.invoke_url}"]
-  logout_urls   = ["http://localhost:3000/logout"]
+  callback_urls = ["http://localhost:3000"]
+  logout_urls   = ["http://localhost:3000"]
 
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["implicit"]
