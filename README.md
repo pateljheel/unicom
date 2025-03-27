@@ -41,3 +41,13 @@ This is the source repository for application and infrastructure code.
     In `backend.tf` `unifamily` profile is set for backend bucket.
 
 - In `provider.tf` use `default` profile to launch resources in your own account or use `unifamily` profile to launch resources in the central (bucket) account.
+
+# Local development environment
+
+- Install mongodb locally or use docker container.
+```bash
+docker pull mongo
+docker run --name mongodb -d -p 27017:27017 mongo
+```
+
+- Now you can use mongodb in the local environment to implement and test the api.
