@@ -1,8 +1,8 @@
 locals {
   # alb_private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets
   # alb_vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
-  alb_vpc_id          = "vpc-0a8aa856369966521"
-  alb_private_subnets = ["subnet-0a765425ed1ead3fa", "subnet-0b79bd1a2030359c0"]
+  alb_vpc_id          = aws_vpc.main.id
+  alb_private_subnets = aws_subnet.private_subnets.*.id
 }
 
 # ALB
@@ -22,6 +22,8 @@ resource "aws_lb" "alb" {
       "Environment" = var.app_environment,
     }
   )
+
+  depends_on = [ aws_security_group.alb_sg ]
 }
 
 # ALB target group
@@ -82,6 +84,20 @@ resource "aws_security_group" "alb_sg" {
       "Environment" = var.app_environment,
     }
   )
+
+  # depends_on = [ aws_lb.alb ]
+}
+
+# Allow inbound from VPC link
+resource "aws_security_group_rule" "alb_allow_from_vpc_link" {
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 80
+  to_port                  = 80
+  security_group_id        = aws_security_group.alb_sg.id
+  source_security_group_id = aws_security_group.vpc_link_sg.id
+
+  description = "Allow HTTP from VPC link"
 }
 
 # Allow all outbound

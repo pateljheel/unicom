@@ -37,6 +37,10 @@ override.tf.json
 terraform.rc
 
 # Ignore local environment files
+.env
+env/
+
+# Ignore local environment files
 env/
 venv/
 __pycache__/

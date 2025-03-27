@@ -1,4 +1,4 @@
-name: "Github Actions Activity"
+name: "DocumentDB run (rm2327)"
 
 # Defines when the workflow will run
 on:
