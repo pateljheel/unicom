@@ -1,10 +1,10 @@
-const COGNITO_LOGIN_URL = 'https://unicom-dev-userpool-domain.auth.us-east-2.amazoncognito.com/login?client_id=4o2bplg4uq2clc0598q136vpq&response_type=token&scope=email+openid+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+const COGNITO_LOGIN_URL = 'https://unicom-dev-userpool-domain.auth.us-east-2.amazoncognito.com/login?client_id=3la4d8muaa4k2p6j4aom5ddpoh&response_type=token&scope=email+openid+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
 
 const TOKEN_STRING = 'id_token';
 
 const COGNITO_LOGOUT_URL =
   'https://unicom-dev-userpool-domain.auth.us-east-2.amazoncognito.com/logout?' +
-  'client_id=4o2bplg4uq2clc0598q136vpq&' +
+  'client_id=3la4d8muaa4k2p6j4aom5ddpoh&' +
   'logout_uri=http%3A%2F%2Flocalhost%3A3000';
 
 export function logout() {
