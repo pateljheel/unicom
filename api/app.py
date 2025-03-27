@@ -27,6 +27,3 @@ mongo_db = mongo_client[os.getenv("MONGO_DB")]
 # Pass mongo_db to routes
 app.config["MONGO_DB"] = mongo_db
 app.register_blueprint(routes)
-
-if __name__ == '__main__':
-    app.run(debug=True)
