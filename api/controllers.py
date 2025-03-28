@@ -1,208 +1,598 @@
-from flask import Blueprint, jsonify, request, current_app
-from bson import ObjectId
+import os
+import base64
 from models import *
+from bson import ObjectId
+from threading import Thread
+from middlewares import jwt_required
+from datetime import datetime, timezone, timedelta
+from flask import Blueprint, jsonify, request
+from utils import process_image, process_text, store_image_in_s3
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
 
 routes = Blueprint('routes', __name__)
-db = current_app.config["MONGO_DB"]
-create_collections(db)
 
-@routes.route('/posts/<string:id>', methods=['GET'])
-def get_post(id):
-    """
-    Fetch a post by its ID.
-    Should not return the post if the post status is not published.
-    Only the post owner should be able to fetch the post if the post status is not published.
-    """
-    post = db.posts.find_one({"_id": ObjectId(id)})
-    if not post:
-        return jsonify({"error": "Post not found"}), 404
-    if post["status"] != PostStatus.PUBLISHED.value:
-        return jsonify({"error": "Access denied"}), 403
-    return jsonify(post), 200
-    # return jsonify({"message": f"Fetching post with ID {id}"}), 200
+CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")  # e.g. https://d111111abcdef8.cloudfront.net/
+KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
+PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH") 
 
-@routes.route('/posts/<string:id>', methods=['DELETE'])
-def delete_post(id):
+@routes.route('/users', methods=['POST'])
+@jwt_required
+def create_user():
     """
-    Delete a post by its ID.
-    Only the post owner should be able to delete the post.
+    Create a user if one doesn't exist, using the email from the verified token.
+    Reactivate the user if they were previously deleted.
     """
-    count = delete_post_from_model(id)
-    if count == 0:
-        return jsonify({"error": "Post not found or not deleted"}), 404
-    return jsonify({"message": f"Post {id} deleted"}), 200
-    # return jsonify({"message": f"Deleting post with ID {id}"}), 200
+    users = get_users_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
 
-@routes.route('/posts/<string:id>', methods=['PATCH'])
-def update_post(id):
-    """
-    Update a post by its ID.
-    Only the post owner should be able to update the post.
-    Only the post status should be updatable between PUBLISHED, UNPUBLISHED and CLOSED.
-    """
-    data = request.json
-    if "status" not in data:
-        return jsonify({"error": "Status is required"}), 400
-    try:
-        new_status = PostStatus(data["status"])
-    except ValueError:
-        return jsonify({"error": "Invalid status provided"}), 400
-    count = update_post_from_model(id, new_status)
-    if count == 0:
-        return jsonify({"error": "Post not found or not updated"}), 404
-    return jsonify({"message": f"Post {id} updated to {new_status.value}"}), 200
-    # return jsonify({"message": f"Updating post with ID {id}"}), 200
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
 
-@routes.route('/users/<string:id>', methods=['GET'])
-def get_user(id):
-    """
-    Fetch a user by its ID. 
-    """
-    user = get_user_by_id(id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    user["_id"] = str(user["_id"])
-    return jsonify(user), 200
-    # return jsonify({"message": f"Fetching user with ID {id}"}), 200
+    # Check if user already exists
+    existing_user = users.find_one({"email": user_email})
+    if existing_user:
+        if existing_user.get("status") == UserStatus.DELETED.value:
+            users.update_one(
+                {"_id": existing_user["_id"]},
+                {"$set": {"status": UserStatus.ACTIVE.value}}
+            )
+            existing_user["status"] = UserStatus.ACTIVE.value
 
-@routes.route('/users/<string:id>', methods=['DELETE'])
-def delete_user(id):
-    """
-    Delete a user by its ID.
-    Only the user owner should be able to delete the user.
-    """
-    count = delete_user_from_model(id)
-    if count == 0:
-        return jsonify({"error": "User not found or not deleted"}), 404
-    return jsonify({"message": f"User {id} deleted"}), 200
-    # return jsonify({"message": f"Deleting user with ID {id}"}), 200
+        existing_user["_id"] = str(existing_user["_id"])
+        return jsonify(existing_user), 200
 
-@routes.route('/users/<string:id>', methods=['PATCH'])
-def update_user(id):
+    # Create new user
+    user_data = {
+        "email": user_email,
+        "college": user_payload.get("college"),
+        "department": user_payload.get("department"),
+        "created_at": datetime.now(timezone.utc),
+        "status": UserStatus.ACTIVE.value
+    }
+    result = users.insert_one(user_data)
+    new_user = users.find_one({"_id": result.inserted_id})
+    new_user["_id"] = str(new_user["_id"])
+
+    return jsonify(new_user), 200
+
+@routes.route('/users', methods=['PATCH'])
+@jwt_required
+def update_user():
     """
     Update a user by its ID.
     Only the user owner should be able to update the user.
     Only the user college and department should be updatable.
     """
+    users = get_users_collection()
+    
+    # Check if the user exists (by the email in the token)
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+    
+    # Fetch the existing user from MongoDB
+    existing_user = users.find_one({"email": user_email})
+    if not existing_user:
+        return jsonify({"error": "User not found or unauthorized"}), 404
+    
+    # Get the update data (college and department)
     data = request.json
     college = data.get("college")
     department = data.get("department")
+    
+    # Validate the update fields (college and department)
     if not college and not department:
-        return jsonify({"error": "At least one field (college or department) must be provided"}), 400
-    count = update_user_from_model(id, college, department)
-    if count == 0:
-        return jsonify({"error": "User not found or not updated"}), 404
-    return jsonify({"message": f"User {id} updated"}), 200
-    # return jsonify({"message": f"Updating user with ID {id}"}), 200
+        return jsonify({"error": "At least one of 'college' or 'department' must be provided"}), 400
+    
+    # Prepare the update data
+    update_fields = {}
+    if college:
+        update_fields["college"] = college
+    if department:
+        update_fields["department"] = department
+    
+    # Update the user in the database
+    result = users.update_one(
+        {"_id": existing_user["_id"], "email": user_email},  # Find by ID and email
+        {"$set": update_fields}  # Update the specified fields
+    )
+    
+    if result.modified_count == 0:
+        return jsonify({"error": "No changes were made"}), 400
+    
+    # Fetch the updated user
+    updated_user = users.find_one({"_id": existing_user["_id"], "email": user_email})
+    updated_user["_id"] = str(updated_user["_id"])  # Convert the ObjectId to string for the response
+    
+    # Return the updated user
+    return jsonify(updated_user), 200
+
+@routes.route('/users/<string:email>', methods=['GET'])
+@jwt_required
+def get_user(email):
+    """
+    Fetch a user by their email.
+    Only authenticated users should be able to access this route.
+    """
+    users = get_users_collection()
+    
+    # Check if the user exists by email
+    user = users.find_one({"email": email})
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Convert ObjectId to string for the response
+    user["_id"] = str(user["_id"])
+    
+    return jsonify(user), 200
+
+def async_moderate_post(post_id, post_data, images, posts):
+    try:
+        # Step 1: Validate number of images
+        if images and len(images) > 5:
+            posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+            return
+
+        image_bytes_list = []
+
+        # Step 2: Decode and moderate all images
+        if images:
+            for i, image_data in enumerate(images):
+                try:
+                    image_bytes = base64.b64decode(image_data)
+                except Exception as e:
+                    print(f"Base64 decoding failed for image {i+1}: {e}")
+                    posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                    return
+
+                if not process_image(image_bytes):
+                    print(f"Image {i+1} failed moderation")
+                    posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                    return
+
+                image_bytes_list.append(image_bytes)  # Store for later S3 upload
+
+        # Step 3: Moderate the text
+        if not process_text(post_data["description"]):
+            print("Text moderation failed")
+            posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+            return
+
+        # Step 4: Store images in S3 *only after* all moderation passes
+        image_urls = []
+        for i, image_bytes in enumerate(image_bytes_list):
+            image_name = f"published/post_{str(post_id)}/image_{i+1}.jpg"
+            image_url = store_image_in_s3(image_bytes, image_name)
+            if not image_url:
+                print(f"Image {i+1} failed to upload to S3")
+                posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                return
+            image_urls.append(image_url)
+
+        # Step 5: Update status and image URLs
+        update_data = {"status": PostStatus.PUBLISHED.value}
+        if image_urls:
+            update_data["image_url"] = image_urls  # Store multiple
+
+        posts.update_one({"_id": post_id}, {"$set": update_data})
+
+    except Exception as e:
+        print(f"Moderation error: {e}")
+        posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+
+
+@routes.route('/posts', methods=['POST'])
+@jwt_required
+def create_post():
+    """
+    Create a new post with status as PROCESSING and persist in the MongoDB.
+    The post will go through image and text moderation, and depending on the result, the post status will change.
+    """
+    posts = get_posts_collection()
+    data = request.json
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+    
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+    
+    # Validate required fields
+    for field in ["category", "title", "description"]:
+        if field not in data:
+            return jsonify({"error": f"{field} is required"}), 400
+
+    post_category = data.get("category")
+    post_data = {
+        "owner": user_email,
+        "category": post_category,
+        "title": data["title"],
+        "description": data["description"],
+        "status": PostStatus.PROCESSING.value,
+        "created_at": datetime.now(timezone.utc)
+    }
+    # Additional category-specific validation
+    if post_category == PostCategory.ROOMMATE.value:
+        for field in ["community", "rent", "start_date"]:
+            if field not in data:
+                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
+        post_data.update({
+            "community": data["community"],
+            "rent": float(data["rent"]),
+            "start_date": datetime.fromisoformat(data["start_date"]),  # Assuming start_date is in ISO format
+        })
+        gender_preference = data.get("general_preferences")
+        if gender_preference not in [gender.value for gender in GenderPreference]:
+            gender_preference = GenderPreference.ANY.value
+        post_data["gender_preference"] = gender_preference
+
+    elif post_category == PostCategory.SELL.value:
+        for field in ["price", "item"]:
+            if field not in data:
+                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
+        post_data.update({
+            "price": float(data["price"]),  # Assuming price is a float
+            "item": data["item"]
+        })
+        sub_category = data.get("sub_category")
+        if sub_category not in [sub.value for sub in SubCategory]:
+            sub_category = SubCategory.OTHER.value  # Default to OTHER if not provided
+        post_data["sub_category"] = sub_category
+        
+    elif post_category == PostCategory.CARPOOL.value:
+        for field in ["from_location", "to_location", "departure_time"]:
+            if field not in data:
+                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
+        post_data.update({
+            "from_location": data["from_location"],
+            "to_location": data["to_location"],
+            "departure_time": datetime.fromisoformat(data["departure_time"]),  # Assuming departure_time is in ISO format
+            "seats_available": int(data.get("seats_available", 1))  # Default to 1 if not provided
+        })
+
+    else:
+        return jsonify({"error": "Invalid post category provided"}), 400
+    
+    # Insert into DB with PROCESSING status
+    post = posts.insert_one(post_data)
+
+    # Kick off background moderation
+    images = data.get("images", [])
+    Thread(target=async_moderate_post, args=(post.inserted_id, post_data, images, posts)).start()
+
+    # Return immediately
+    return jsonify({
+        "message": "Post submitted and is under moderation",
+        "post_id": str(post.inserted_id),
+        "status": PostStatus.PROCESSING.value
+    }), 202
+
+
+@routes.route('/posts/<string:id>', methods=['GET'])
+@jwt_required
+def get_post(id):
+    """
+    Fetch a post by its ID.
+    - If status is PUBLISHED: anyone can view.
+    - If not PUBLISHED: only the owner can view.
+    """
+    posts = get_posts_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+
+    try:
+        post = posts.find_one({"_id": ObjectId(id)})
+    except Exception as e:
+        return jsonify({"error": "Invalid post ID format"}), 400
+
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    post_status = post.get("status")
+    post_owner = post.get("owner")
+
+    if post_status == PostStatus.DELETED.value:
+        return jsonify({"error": "Post not found"}), 404
+
+    if post_status != PostStatus.PUBLISHED.value and post_owner != user_email:
+        return jsonify({"error": "You are not authorized to view this post"}), 403
+
+    # Convert ObjectId to string for JSON response
+    post["_id"] = str(post["_id"])
+    return jsonify(post), 200
+
+
+@routes.route('/posts/<string:id>', methods=['DELETE'])
+@jwt_required
+def delete_post(id):
+    """
+    Soft delete a post by setting its status to DELETED.
+    Only the post owner should be able to delete the post.
+    """
+    posts = get_posts_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+
+    try:
+        post = posts.find_one({"_id": ObjectId(id)})
+    except Exception:
+        return jsonify({"error": "Invalid post ID format"}), 400
+
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    if post.get("owner") != user_email:
+        return jsonify({"error": "You are not authorized to delete this post"}), 403
+
+    posts.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"status": PostStatus.DELETED.value}}
+    )
+
+    return jsonify({"message": "Post marked as deleted"}), 200
+
+
+@routes.route('/posts/<string:id>', methods=['PATCH'])
+@jwt_required
+def update_post(id):
+    """
+    Update a post by its ID.
+    Only the post owner should be able to update the post.
+    Only the post status should be updatable between PUBLISHED, and CLOSED.
+    Post with FAILED status can't be updated.
+    """
+    posts = get_posts_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+
+    try:
+        post = posts.find_one({"_id": ObjectId(id)})
+    except Exception:
+        return jsonify({"error": "Invalid post ID format"}), 400
+
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    if post.get("owner") != user_email:
+        return jsonify({"error": "You are not authorized to update this post"}), 403
+    
+    immutable_statuses = {
+        PostStatus.DELETED.value,  # Assuming DELETED is a final state
+        PostStatus.FAILED.value,  # Posts in FAILED status cannot be updated
+        PostStatus.PROCESSING.value  # Posts in PROCESSING status cannot be updated
+    }
+    
+    if post.get("status") in immutable_statuses:
+        return jsonify({"error": "Post in current status cannot be updated"}), 400
+
+    data = request.json
+    new_status = data.get("status")
+
+    if not new_status:
+        return jsonify({"error": "Missing 'status' field in request body"}), 400
+
+    allowed_statuses = {
+        PostStatus.PUBLISHED.value,
+        PostStatus.CLOSED.value
+    }
+
+    if new_status not in allowed_statuses:
+        return jsonify({
+            "error": f"Invalid status. Allowed values: {', '.join(allowed_statuses)}"
+        }), 400
+
+    posts.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"status": new_status}}
+    )
+
+    return jsonify({"message": f"Post status updated to {new_status}"}), 200
+
 
 @routes.route('/myposts', methods=['GET'])
+@jwt_required
 def get_my_posts():
     """
     Fetch all posts created by the user.
-    Should return all posts created by the user regardless of the post status.
-    Allow filtering by post status and category.
-    Allow searching by post title and description.
-    Allow sorting by post created date.
-    Allow pagination.
+    - Excludes DELETED posts
+    - Supports filtering by status and category
+    - Supports searching by title/description
+    - Supports sorting by created_at
+    - Supports pagination
     """
-    # db = current_app.config["MONGO_DB"]
-    user_email = request.args.get("user_email")
+    posts = get_posts_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
     if not user_email:
-        return jsonify({"error": "user_email query parameter required"}), 400
-    query = {"user_email": user_email}
+        return jsonify({"error": "User email not found in token"}), 400
+
+    # Query params
     status = request.args.get("status")
+    category = request.args.get("category")
+    search = request.args.get("search", "").strip()
+    sort_order = request.args.get("sort", "desc").lower()  # "asc" or "desc"
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 10))
+
+    if page < 1 or limit < 1:
+        return jsonify({"error": "Page and limit must be positive integers"}), 400
+
+    query = {
+        "owner": user_email,
+        "status": {"$ne": PostStatus.DELETED.value}
+    }
+
     if status:
         query["status"] = status
-    category = request.args.get("category")
     if category:
         query["category"] = category
-    search = request.args.get("search")
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
-    sort_by = request.args.get("sort_by", "created_at")
-    order = int(request.args.get("order", -1))
-    page = int(request.args.get("page", 1))
-    page_size = int(request.args.get("page_size", 10))
-    posts_cursor = db.posts.find(query).sort(sort_by, order).skip((page-1)*page_size).limit(page_size)
-    posts = []
-    for post in posts_cursor:
+
+    sort = [("created_at", 1 if sort_order == "asc" else -1)]
+    skip = (page - 1) * limit
+
+    cursor = posts.find(query).sort(sort).skip(skip).limit(limit)
+    total = posts.count_documents(query)
+
+    results = []
+    for post in cursor:
         post["_id"] = str(post["_id"])
-        posts.append(post)
-    return jsonify(posts), 200
-    # return jsonify({"message": "Fetching my posts"}), 200
+        results.append(post)
+
+    return jsonify({
+        "posts": results,
+        "page": page,
+        "limit": limit,
+        "total": total
+    }), 200
+
 
 @routes.route('/posts', methods=['GET'])
+@jwt_required
 def get_posts():
     """
     Fetch all posts.
-    Should return all posts in published status.
-    Allow filtering by post category.
-    Allow searching by post title and description.
-    Allow sorting by post created date.
-    Allow pagination.
+    - Only returns posts with PUBLISHED status
+    - Supports filtering by category
+    - Supports searching by title/description
+    - Supports sorting by created_at
+    - Supports pagination
     """
-    # db = current_app.config["MONGO_DB"]
-    query = {"status": PostStatus.PUBLISHED.value}
+    posts = get_posts_collection()
+
+    # Query params
     category = request.args.get("category")
+    search = request.args.get("search", "").strip()
+    sort_order = request.args.get("sort", "desc").lower()  # "asc" or "desc"
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 10))
+
+    if page < 1 or limit < 1:
+        return jsonify({"error": "Page and limit must be positive integers"}), 400
+
+    query = {
+        "status": PostStatus.PUBLISHED.value
+    }
+
     if category:
         query["category"] = category
-    search = request.args.get("search")
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
-    # Sorting and pagination (simplified)
-    sort_by = request.args.get("sort_by", "created_at")
-    order = int(request.args.get("order", -1))
-    page = int(request.args.get("page", 1))
-    page_size = int(request.args.get("page_size", 10))
-    posts_cursor = db.posts.find(query).sort(sort_by, order).skip((page-1)*page_size).limit(page_size)
-    posts = []
-    for post in posts_cursor:
+
+    sort = [("created_at", 1 if sort_order == "asc" else -1)]
+    skip = (page - 1) * limit
+
+    cursor = posts.find(query).sort(sort).skip(skip).limit(limit)
+    total = posts.count_documents(query)
+
+    results = []
+    for post in cursor:
         post["_id"] = str(post["_id"])
-        posts.append(post)
-    return jsonify(posts), 200
-    # return jsonify({"message": "Fetching all posts"}), 200
+        results.append(post)
 
-@routes.route('/posts', methods=['POST'])
-def create_post():
-    """
-    Create a new post.
-    Must process the post image and text for modedration.
-    Once moderated, the post should be created with the status set to PUBLISHED.
-    Post images must be stored in s3 bucket and the URL should be returned in the response.
-    While moderation is running the the post images must be stored in an intermediary s3 bucket and post status must be set to PROCESSING.
-    If post moderation fails, the post status should be changed to FAILED allowing user to only delete the post. 
-    """
-    data = request.json
-    required_fields = ["user_email", "category", "title", "description"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
-    try:
-        category = PostCategory(data["category"])
-    except ValueError:
-        return jsonify({"error": "Invalid category"}), 400
-    post_id = create_post_from_model(data["user_email"], category, data["title"], data["description"])
-    # Simulate moderation process: here we'll just set the status to PUBLISHED.
-    update_post_from_model(post_id, PostStatus.PUBLISHED)
-    image_url = data.get("image_url")
-    if image_url:
-        create_image(str(post_id), image_url)
-    return jsonify({"message": "Post created", "post_id": str(post_id)}), 201
-    # return jsonify({"message": "Creating a new post"}), 201
+    return jsonify({
+        "posts": results,
+        "page": page,
+        "limit": limit,
+        "total": total
+    }), 200
 
-@routes.route('/signedurl', methods=['GET'])
-def get_signed_url():
+def rsa_signer(message):
+    with open(PRIVATE_KEY_PATH, 'rb') as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None
+        )
+        signature = private_key.sign(
+            message.encode('utf-8'),
+            padding.PKCS1v15(),
+            hashes.SHA1()
+        )
+        return base64.b64encode(signature).decode('utf-8')
+
+@routes.route('/signedcookie', methods=['GET'])
+@jwt_required
+def get_signed_cookie():
     """
-    Generate a signed URL for the post images.
-    Common URL should be returned for all the post images in the final s3 bucket (not the intermediary s3 bucket).
+    Generate signed CloudFront cookies to allow access to image files
+    via a wildcard path (e.g., /post_abc123/*).
     """
-    # TODO
-    signed_url = ""
-    return jsonify({"signed_url": signed_url}), 200
-    # return jsonify({"message": "Fetching signed URL"}), 200
+    # Allow access to all post images for 1 hour
+    expires = int((datetime.now(timezone.utc) + timedelta(hours=24)).timestamp())
+    policy = f"""{{
+      "Statement": [
+        {{
+          "Resource": "{CLOUDFRONT_URL}post_*/*",
+          "Condition": {{
+            "DateLessThan": {{
+              "AWS:EpochTime": {expires}
+            }}
+          }}
+        }}
+      ]
+    }}"""
+
+    # Sign the policy
+    signature = rsa_signer(policy)
+
+    return jsonify({
+        "CloudFront-Policy": base64.b64encode(policy.encode('utf-8')).decode('utf-8'),
+        "CloudFront-Signature": signature,
+        "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
+        "expires": expires
+    }), 200
+
+@routes.route('/users/me', methods=['DELETE'])
+@jwt_required
+def delete_current_user():
+    """
+    Soft delete the currently authenticated user and all their posts.
+    Sets user.status = DELETED and their post statuses = DELETED.
+    """
+    posts = get_posts_collection()
+    users = get_users_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+
+    user = users.find_one({"email": user_email})
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Soft-delete posts
+    posts.update_many(
+        {"owner": user_email},
+        {"$set": {"status": PostStatus.DELETED.value}}
+    )
+
+    # Soft-delete user
+    users.update_one(
+        {"email": user_email},
+        {"$set": {"status": "DELETED"}}
+    )
+
+    return jsonify({"message": "Your account and posts have been deleted"}), 200

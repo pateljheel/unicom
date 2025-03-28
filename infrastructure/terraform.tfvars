@@ -17,3 +17,6 @@ db_instance_class = "db.t3.medium"
 website_bucket_name = "unicom-website"
 images_bucket_name = "unicom-images"
 draft_images_bucket_name = "unicom-draft-images"
+
+# cloudfront variables
+s3_origin_id = "unicom-s3-origin"

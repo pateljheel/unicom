@@ -49,3 +49,6 @@ __pycache__/
 node_modules/
 # Ignore package-lock.json
 package-lock.json
+
+# Ignore ssh keys
+*.pem

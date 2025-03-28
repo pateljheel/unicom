@@ -113,3 +113,19 @@ variable "draft_images_bucket_name" {
   description = "S3 bucket name for draft images"
   type        = string
 }
+
+# cloudfront variables
+variable "s3_origin_id" {
+  description = "Origin ID for S3 bucket in CloudFront"
+  type        = string
+}
+variable "s3_distribution_price_class" {
+  description = "Price class for CloudFront distribution"
+  type        = string
+  default     = "PriceClass_100" # Options: PriceClass_100, PriceClass_200, PriceClass_All
+}
+variable "s3_distribution_public_key" {
+  description = "Path to the public key for CloudFront signing"
+  type        = string
+  default     = "keys/public_key.pem" # Update this path to your public key file
+}
