@@ -80,16 +80,6 @@ resource "aws_security_group_rule" "db_allow_all_outbound" {
   description       = "Allow all outbound"
 }
 
-# resource "aws_security_group_rule" "db_allow_all_inbound" {
-#   type              = "ingress"
-#   protocol          = "-1"
-#   from_port         = 27017
-#   to_port           = 27017
-#   security_group_id = aws_security_group.db_sg.id
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   description       = "Allow all inbound"
-# }
-
 # Allow HTTP from internal load balancer
 resource "aws_security_group_rule" "db_allow_from_asg" {
   type                     = "ingress"
