@@ -54,7 +54,8 @@ resource "aws_s3_bucket_website_configuration" "website_config" {
 # }
 
 resource "aws_s3_bucket" "images_bucket" {
-  bucket = "${var.images_bucket_name}-${var.app_environment}"
+  bucket        = "${var.images_bucket_name}-${var.app_environment}"
+  force_destroy = true # Allows deletion of the bucket even if it contains objects
 
   tags = merge(
     var.additional_tags,
@@ -66,7 +67,8 @@ resource "aws_s3_bucket" "images_bucket" {
 }
 
 resource "aws_s3_bucket" "app_bucket" {
-  bucket = "${var.app_bucket_name}-${var.app_environment}"
+  bucket        = "${var.app_bucket_name}-${var.app_environment}"
+  force_destroy = true # Allows deletion of the bucket even if it contains objects
 
   tags = merge(
     var.additional_tags,

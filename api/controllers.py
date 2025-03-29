@@ -17,7 +17,7 @@ CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")  # e.g. https://d111111abcdef8.clou
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
 PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH") 
 
-@routes.route('/users', methods=['POST'])
+@routes.route('/api/users', methods=['POST'])
 @jwt_required
 def create_user():
     """
@@ -67,7 +67,7 @@ def create_user():
 
     return jsonify(new_user), 200
 
-@routes.route('/users', methods=['PATCH'])
+@routes.route('/api/users', methods=['PATCH'])
 @jwt_required
 def update_user():
     """
@@ -139,7 +139,7 @@ def update_user():
     # Return the updated user
     return jsonify(updated_user), 200
 
-@routes.route('/users/<string:email>', methods=['GET'])
+@routes.route('/api/users/<string:email>', methods=['GET'])
 @jwt_required
 def get_user(email):
     """
@@ -228,7 +228,7 @@ def async_moderate_post(post_id, post_data, images, posts):
         posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
 
 
-@routes.route('/posts', methods=['POST'])
+@routes.route('/api/posts', methods=['POST'])
 @jwt_required
 def create_post():
     """
@@ -339,7 +339,7 @@ def create_post():
     }), 202
 
 
-@routes.route('/posts/<string:id>', methods=['GET'])
+@routes.route('/api/posts/<string:id>', methods=['GET'])
 @jwt_required
 def get_post(id):
     """
@@ -393,7 +393,7 @@ def get_post(id):
     return jsonify(post), 200
 
 
-@routes.route('/posts/<string:id>', methods=['DELETE'])
+@routes.route('/api/posts/<string:id>', methods=['DELETE'])
 @jwt_required
 def delete_post(id):
     """
@@ -444,7 +444,7 @@ def delete_post(id):
     return jsonify({"message": "Post marked as deleted"}), 200
 
 
-@routes.route('/posts/<string:id>', methods=['PATCH'])
+@routes.route('/api/posts/<string:id>', methods=['PATCH'])
 @jwt_required
 def update_post(id):
     """
@@ -526,7 +526,7 @@ def update_post(id):
     return jsonify({"message": f"Post status updated to {new_status}"}), 200
 
 
-@routes.route('/myposts', methods=['GET'])
+@routes.route('/api/myposts', methods=['GET'])
 @jwt_required
 def get_my_posts():
     """
@@ -614,7 +614,7 @@ def get_my_posts():
     }), 200
 
 
-@routes.route('/posts', methods=['GET'])
+@routes.route('/api/posts', methods=['GET'])
 @jwt_required
 def get_posts():
     """
@@ -702,7 +702,7 @@ def rsa_signer(message):
         )
         return base64.b64encode(signature).decode('utf-8')
 
-@routes.route('/signedcookie', methods=['GET'])
+@routes.route('/api/signedcookie', methods=['GET'])
 @jwt_required
 def get_signed_cookie():
     """
@@ -741,7 +741,7 @@ def get_signed_cookie():
         "expires": expires
     }), 200
 
-@routes.route('/users/me', methods=['DELETE'])
+@routes.route('/api/users/me', methods=['DELETE'])
 @jwt_required
 def delete_current_user():
     """

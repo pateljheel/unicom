@@ -13,10 +13,40 @@ data "template_file" "ec2_user_data" {
   }
 }
 
+# Data source to fetch the latest Amazon Linux 2023 AMI
+data "aws_ami" "amazonlinux" {
+    most_recent = true    # Get the most recent version of the AMI
+    owners      = ["amazon"]  # Filter AMIs owned by Amazon
+
+    # Filter for Amazon Linux 2023 AMIs
+    filter {
+        name   = "name"
+        values = ["al2023-ami-2023*"]
+    }
+
+    # Ensure we get a hardware virtual machine
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+    # Filter for EBS-backed instances
+    filter {
+        name   = "root-device-type"
+        values = ["ebs"]
+    }
+
+    # Filter for x86_64 architecture
+    filter {
+        name   = "architecture"
+        values = ["x86_64"]
+    }
+}
+
 # ASG template
 resource "aws_launch_template" "asg_template" {
   name          = "${var.app_name}-${var.app_environment}-asg-template"
-  image_id      = var.ami_id
+  image_id      = coalesce(var.ami_id, data.aws_ami.amazonlinux.id)
   instance_type = var.instance_type
 
   user_data = base64encode(data.template_file.ec2_user_data.rendered)

@@ -71,23 +71,33 @@ This is the source repository for application and infrastructure code.
     openssl rsa -pubout -in private_key.pem -out public_key.pem
     ```
 
-2. Build the website in the `website/unicom` directory.
+2. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrasture/backend` to match the created bucket.
 
-    ```bash
-    cd website/unicom
-    npm install
-    npm run build
-    ```
-
-3. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrasture/backend` to match the created bucket.
-
-## Deploy/Update infrastructure
+## Deploy/Update infrastructure and website
 
 1. Deploy or update (for first time run for the deployment) the infrastructure using terraform.
 
     ```bash
+    cd infrastructure
     terraform init
     terraform apply
     ```
+
+2. Build the website in the `website/unicom` directory.
+
+    ```bash
+    cd ../website/unicom
+    npm install
+    npm run build
+    ```
+
+3. Again run terraform to sync website to the website s3 bucket.
+
+    ```bash
+    cd ../../infrastructure
+    terraform init
+    terraform apply
+    ```
+
 
 ## API Docs are available at the API endpoint `/apidocs`.

@@ -54,18 +54,18 @@ mongo_db = mongo_client[os.getenv("MONGO_DB")]
 
 # Pass mongo_db to routes
 app.config["MONGO_DB"] = mongo_db
-app.config['SWAGGER'] = {
-    "title": "Post Platform API",
-    "uiversion": 3,
-    "securityDefinitions": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
-            "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
-        }
-    }
-}
+# app.config['SWAGGER'] = {
+#     "title": "Post Platform API",
+#     "uiversion": 3,
+#     "securityDefinitions": {
+#         "Bearer": {
+#             "type": "apiKey",
+#             "name": "Authorization",
+#             "in": "header",
+#             "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
+#         }
+#     }
+# }
 
 # Register routes blueprint
 app.register_blueprint(routes)

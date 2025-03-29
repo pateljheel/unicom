@@ -34,19 +34,19 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   type        = list(string)
   description = "Public Subnet CIDR values"
-  default     = ["10.0.1.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   type        = list(string)
   description = "Private Subnet CIDR values"
-  default     = ["10.0.4.0/24"]
+  default     = ["10.0.4.0/24", "10.0.5.0/24"]
 }
 
 variable "azs" {
   type        = list(string)
   description = "Availability Zones"
-  default     = ["us-east-2a"]
+  default     = ["us-east-2a", "us-east-2b"] # Update this to match your desired availability zones
 }
 
 
@@ -54,7 +54,7 @@ variable "azs" {
 variable "ami_id" {
   description = "AMI ID to use for the EC2 instance"
   type        = string
-  default     = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
+  default     = null
 }
 variable "instance_type" {
   description = "Instance type for the EC2 instance"
