@@ -178,3 +178,13 @@ resource "aws_iam_instance_profile" "asg_instance_profile" {
   name = "${var.app_name}-${var.app_environment}-asg-instance-profile"
   role = aws_iam_role.asg_instance_role.name
 }
+
+resource "aws_iam_role_policy_attachment" "attach_comprehend_readonly" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/ComprehendFullAccess"
+}
+resource "aws_iam_role_policy_attachment" "attach_rekognition_policy" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
+}
+

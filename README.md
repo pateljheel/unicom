@@ -45,56 +45,47 @@ This is the source repository for application and infrastructure code.
 # Local development environment
 
 - Install mongodb locally or use docker container.
-```bash
-docker pull mongo
-docker run -d -p 27017:27017 --name mongodb \
-  -e MONGO_INITDB_ROOT_USERNAME=unicom \
-  -e MONGO_INITDB_ROOT_PASSWORD=unicom \
-  -e MONGO_INITDB_DATABASE=unicom \
-  mongo
-```
+
+    ```bash
+    docker pull mongo
+    docker run -d -p 27017:27017 --name mongodb \
+      -e MONGO_INITDB_ROOT_USERNAME=unicom \
+      -e MONGO_INITDB_ROOT_PASSWORD=unicom \
+      -e MONGO_INITDB_DATABASE=unicom \
+      mongo
+    ```
 
 - Now you can use mongodb in the local environment to implement and test the api.
 
-## Sample requests
+# Deploying the application on AWS
 
-```bash
-# test api with id_token
+## Pre-requisites
 
-# create user from the id_token
-curl -X GET "https://sxj4mye19c.execute-api.us-east-2.amazonaws.com/users/jp9959@g.rit.edu" \
--H "Authorization: Bearer $ID_TOKEN"
+0. Developer machine must have admin access to the AWS project we AWS CLI configured.
 
-# update user department
-curl -X PATCH "http://localhost:5000/users" \
--H "Authorization: Bearer $ID_TOKEN" \
--H "Content-Type: application/json" \
--d '{"college": "GCCIS", "department": "Software Engineering"}'
+1. Create public private key pair in the `infrastructure/keys` directory. This is a unique key pair for the deployment. Use the same key pair for future terraform runs for the same deployment.
 
-# get user details by email
-curl -X GET "http://localhost:5000/users/jheelpatel15@gmail.com" \
--H "Authorization: Bearer $ID_TOKEN" \
--H "Content-Type: application/json"
+    ```bash
+    cd infrastructure/keys
+    openssl genrsa -out private_key.pem 2048
+    openssl rsa -pubout -in private_key.pem -out public_key.pem
+    ```
 
-# get a post by id
-curl -X GET "http://localhost:5000/posts/67e6ed74ea44b2b331cf2004" \
--H "Authorization: Bearer $ID_TOKEN" \
--H "Content-Type: application/json"
+2. Build the website in the `website/unicom` directory.
 
-curl -X DELETE "http://localhost:5000/posts/67e6fa66ec16d63d17fb2b3c" \
--H "Authorization: Bearer $RIT_TOKEN" \
--H "Content-Type: application/json"
+    ```bash
+    cd website/unicom
+    npm install
+    npm run build
+    ```
 
-curl -X PATCH "http://localhost:5000/posts/67e6ed74ea44b2b331cf2004" \
-  -H "Authorization: Bearer $ID_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status": "UNPUBLISHED"}'
+3. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrasture/backend` to match the created bucket.
 
-curl -X GET "http://localhost:5000/myposts?status=PUBLISHED&search=bookshelf&sort=asc&page=1&limit=5" \
-  -H "Authorization: Bearer $ID_TOKEN" \
-  -H "Content-Type: application/json"
+## Deploy/Update infrastructure
 
-```
+1. Deploy or update (for first time run for the deployment) the infrastructure using terraform.
 
-
-id_token=eyJraWQiOiJOeUk5OHN0OFwvbFhCZ2FCXC82cklqNWdtazh5eDlWWFdDT0dHNElwTVhDc0E9IiwiYWxnIjoiUlMyNTYifQ.eyJhdF9oYXNoIjoic2p1aDFXalJqakdDYWtyUUplZTFEdyIsInN1YiI6IjQxMGJkNWMwLTgwMTEtNzBhOS02NTYwLWM2MWRiZWQ5MWU3ZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0yLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMl9wRFJxQWpBZVkiLCJjb2duaXRvOnVzZXJuYW1lIjoiNDEwYmQ1YzAtODAxMS03MGE5LTY1NjAtYzYxZGJlZDkxZTdkIiwiYXVkIjoiM212ZzBwZGx2NDc1MWRocjUyaXJlZDVvbDIiLCJldmVudF9pZCI6IjE1NTRlODk3LWU5M2YtNGI3YS1iOTMyLWI3N2I3OWZhYjVmYyIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzQzMjYxODQ5LCJleHAiOjE3NDMzNDgyNDksImlhdCI6MTc0MzI2MTg0OSwianRpIjoiMTBhMjBhODMtY2Y0Mi00N2IxLWI3NTAtMDc5YTY2OGExMzQ4IiwiZW1haWwiOiJqcDk5NTlAZy5yaXQuZWR1In0.lHZua5fabCo7vQM__nCAwhq4BusrjtdHB4gQWSF45gdp70xYr2AoHIy2G0QlvuFfIeeoEBXD7TWOTNLujwx480CtmUits-jQj_Vdp2OMycX8W-p9uX1ooJgYWZS6IpyoqBWo8ucv0WEcGiY3IbM3jD_CNKuvBzl49GTy_A8eAA3T437qH4z9kpMbGgsgao4APmHZTKe3vqr6htjCCwPuwqkhL21dWB_E_UTsxqP2FDfUiW989hwNzzoQCWYjNrl-p89n91k93CKsBg6K0pfb7qUmz-498a7HMIrtiGhaZO4VF0yFKy2AV7WHhlLuBgl4Ljlb3F94AHSW2MW4meSpkg
+    ```bash
+    terraform init
+    terraform apply
+    ```
