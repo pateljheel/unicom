@@ -3,15 +3,17 @@ from dotenv import load_dotenv
 from flask import Flask
 from pymongo import MongoClient
 from controllers import routes  # Import routes after app is initialized
+from flasgger import Swagger
 
 # Load environment variables
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+swagger = Swagger(app)
 
 # Initialize MongoDB client with connection pooling
-if bool(os.getenv("MONGO_USE_TLS", False)):
+if bool(os.getenv("MONGO_USE_TLS", 'false') != 'false'):
     mongo_client = MongoClient(
         host=os.getenv("MONGO_HOST"),
         port=int(os.getenv("MONGO_PORT")),
@@ -52,6 +54,18 @@ mongo_db = mongo_client[os.getenv("MONGO_DB")]
 
 # Pass mongo_db to routes
 app.config["MONGO_DB"] = mongo_db
+app.config['SWAGGER'] = {
+    "title": "Post Platform API",
+    "uiversion": 3,
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
+        }
+    }
+}
 
 # Register routes blueprint
 app.register_blueprint(routes)

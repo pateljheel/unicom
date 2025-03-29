@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, jsonify, request
 from utils import process_image, process_text, store_image_in_s3
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 
 routes = Blueprint('routes', __name__)
@@ -21,8 +21,17 @@ PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH")
 @jwt_required
 def create_user():
     """
-    Create a user if one doesn't exist, using the email from the verified token.
-    Reactivate the user if they were previously deleted.
+    Create or reactivate a user.
+    ---
+    tags:
+      - Users
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: User created or reactivated
+      400:
+        description: Missing or invalid email in token
     """
     users = get_users_collection()
     user_payload = request.user_payload
@@ -62,9 +71,28 @@ def create_user():
 @jwt_required
 def update_user():
     """
-    Update a user by its ID.
-    Only the user owner should be able to update the user.
-    Only the user college and department should be updatable.
+    Update user details (college and/or department).
+    ---
+    tags:
+      - Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        schema:
+          properties:
+            college:
+              type: string
+            department:
+              type: string
+    responses:
+      200:
+        description: User updated
+      400:
+        description: No fields provided or update failed
+      404:
+        description: User not found
     """
     users = get_users_collection()
     
@@ -116,7 +144,21 @@ def update_user():
 def get_user(email):
     """
     Fetch a user by their email.
-    Only authenticated users should be able to access this route.
+    ---
+    tags:
+      - Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: email
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: User data returned
+      404:
+        description: User not found
     """
     users = get_users_collection()
     
@@ -190,8 +232,33 @@ def async_moderate_post(post_id, post_data, images, posts):
 @jwt_required
 def create_post():
     """
-    Create a new post with status as PROCESSING and persist in the MongoDB.
-    The post will go through image and text moderation, and depending on the result, the post status will change.
+    Create a new post and trigger moderation.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            category:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            images:
+              type: array
+              items:
+                type: string
+    responses:
+      202:
+        description: Post created and under moderation
+      400:
+        description: Missing fields or invalid input
     """
     posts = get_posts_collection()
     data = request.json
@@ -276,9 +343,26 @@ def create_post():
 @jwt_required
 def get_post(id):
     """
-    Fetch a post by its ID.
-    - If status is PUBLISHED: anyone can view.
-    - If not PUBLISHED: only the owner can view.
+    Get a post by its ID.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Post returned
+      400:
+        description: Invalid post ID
+      403:
+        description: Unauthorized to view this post
+      404:
+        description: Post not found
     """
     posts = get_posts_collection()
     user_payload = request.user_payload
@@ -313,8 +397,26 @@ def get_post(id):
 @jwt_required
 def delete_post(id):
     """
-    Soft delete a post by setting its status to DELETED.
-    Only the post owner should be able to delete the post.
+    Soft delete a post (owner-only).
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Post marked as deleted
+      400:
+        description: Invalid post ID
+      403:
+        description: Unauthorized to delete this post
+      404:
+        description: Post not found
     """
     posts = get_posts_collection()
     user_payload = request.user_payload
@@ -346,10 +448,32 @@ def delete_post(id):
 @jwt_required
 def update_post(id):
     """
-    Update a post by its ID.
-    Only the post owner should be able to update the post.
-    Only the post status should be updatable between PUBLISHED, and CLOSED.
-    Post with FAILED status can't be updated.
+    Update a post's status (PUBLISHED or CLOSED only).
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+      - name: body
+        in: body
+        schema:
+          properties:
+            status:
+              type: string
+    responses:
+      200:
+        description: Post status updated
+      400:
+        description: Invalid status or update disallowed
+      403:
+        description: Unauthorized
+      404:
+        description: Post not found
     """
     posts = get_posts_collection()
     user_payload = request.user_payload
@@ -406,12 +530,37 @@ def update_post(id):
 @jwt_required
 def get_my_posts():
     """
-    Fetch all posts created by the user.
-    - Excludes DELETED posts
-    - Supports filtering by status and category
-    - Supports searching by title/description
-    - Supports sorting by created_at
-    - Supports pagination
+    Fetch current user's posts with filters and pagination.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: status
+        in: query
+        type: string
+      - name: category
+        in: query
+        type: string
+      - name: search
+        in: query
+        type: string
+      - name: sort
+        in: query
+        type: string
+        enum: [asc, desc]
+      - name: page
+        in: query
+        type: integer
+      - name: limit
+        in: query
+        type: integer
+    responses:
+      200:
+        description: List of user's posts
+      400:
+        description: Invalid pagination parameters
     """
     posts = get_posts_collection()
     user_payload = request.user_payload
@@ -469,12 +618,34 @@ def get_my_posts():
 @jwt_required
 def get_posts():
     """
-    Fetch all posts.
-    - Only returns posts with PUBLISHED status
-    - Supports filtering by category
-    - Supports searching by title/description
-    - Supports sorting by created_at
-    - Supports pagination
+    Fetch all published posts with filters, search, pagination.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: category
+        in: query
+        type: string
+      - name: search
+        in: query
+        type: string
+      - name: sort
+        in: query
+        type: string
+        enum: [asc, desc]
+      - name: page
+        in: query
+        type: integer
+      - name: limit
+        in: query
+        type: integer
+    responses:
+      200:
+        description: List of posts
+      400:
+        description: Invalid pagination parameters
     """
     posts = get_posts_collection()
 
@@ -535,8 +706,15 @@ def rsa_signer(message):
 @jwt_required
 def get_signed_cookie():
     """
-    Generate signed CloudFront cookies to allow access to image files
-    via a wildcard path (e.g., /post_abc123/*).
+    Generate CloudFront signed cookies for post images.
+    ---
+    tags:
+      - Media
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Signed cookies returned
     """
     # Allow access to all post images for 1 hour
     expires = int((datetime.now(timezone.utc) + timedelta(hours=24)).timestamp())
@@ -567,8 +745,17 @@ def get_signed_cookie():
 @jwt_required
 def delete_current_user():
     """
-    Soft delete the currently authenticated user and all their posts.
-    Sets user.status = DELETED and their post statuses = DELETED.
+    Soft delete current user and all their posts.
+    ---
+    tags:
+      - Users
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: User and posts deleted
+      404:
+        description: User not found
     """
     posts = get_posts_collection()
     users = get_users_collection()
@@ -600,6 +787,12 @@ def delete_current_user():
 @routes.route('/health', methods=['GET'])
 def health_check():
     """
-    Health check endpoint to verify the service is running.
+    Health check endpoint.
+    ---
+    tags:
+      - System
+    responses:
+      200:
+        description: API is running
     """
     return jsonify({"status": "ok", "message": "API is running"}), 200
