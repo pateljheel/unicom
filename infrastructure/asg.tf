@@ -3,13 +3,53 @@ locals {
   asg_private_subnets = aws_subnet.private_subnets.*.id
 }
 
+
+data "template_file" "ec2_user_data" {
+  template = file("${path.module}/scripts/unicom_api_bootstrap.sh.tpl")
+
+  vars = {
+    aws_region = var.app_region
+    app_bucket = aws_s3_bucket.app_bucket.bucket
+  }
+}
+
+# Data source to fetch the latest Amazon Linux 2023 AMI
+data "aws_ami" "amazonlinux" {
+    most_recent = true    # Get the most recent version of the AMI
+    owners      = ["amazon"]  # Filter AMIs owned by Amazon
+
+    # Filter for Amazon Linux 2023 AMIs
+    filter {
+        name   = "name"
+        values = ["al2023-ami-2023*"]
+    }
+
+    # Ensure we get a hardware virtual machine
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+    # Filter for EBS-backed instances
+    filter {
+        name   = "root-device-type"
+        values = ["ebs"]
+    }
+
+    # Filter for x86_64 architecture
+    filter {
+        name   = "architecture"
+        values = ["x86_64"]
+    }
+}
+
 # ASG template
 resource "aws_launch_template" "asg_template" {
   name          = "${var.app_name}-${var.app_environment}-asg-template"
-  image_id      = var.ami_id
+  image_id      = coalesce(var.ami_id, data.aws_ami.amazonlinux.id)
   instance_type = var.instance_type
 
-  user_data = base64encode(file("${path.module}/scripts/ec2_bootstrap.sh"))
+  user_data = base64encode(data.template_file.ec2_user_data.rendered)
 
   tags = merge(
     var.additional_tags,
@@ -114,24 +154,24 @@ resource "aws_security_group_rule" "asg_allow_all_outbound" {
 resource "aws_security_group_rule" "allow_http_from_lb" {
   type                     = "ingress"
   protocol                 = "tcp"
-  from_port                = 80
-  to_port                  = 80
+  from_port                = 8080
+  to_port                  = 8080
   security_group_id        = aws_security_group.asg_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
 
   description = "Allow HTTP from internal load balancer"
 }
 
-# Allow SSH from everywhere
-resource "aws_security_group_rule" "allow_ssh" {
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 22
-  to_port           = 22
-  security_group_id = aws_security_group.asg_sg.id
-  cidr_blocks       = ["0.0.0.0/0"]
-  description       = "Allow SSH from everywhere"
-}
+# # Allow SSH from everywhere
+# resource "aws_security_group_rule" "allow_ssh" {
+#   type              = "ingress"
+#   protocol          = "tcp"
+#   from_port         = 22
+#   to_port           = 22
+#   security_group_id = aws_security_group.asg_sg.id
+#   cidr_blocks       = ["0.0.0.0/0"]
+#   description       = "Allow SSH from everywhere"
+# }
 
 resource "aws_iam_role" "asg_instance_role" {
   name = "${var.app_name}-${var.app_environment}-asg-role"
@@ -159,7 +199,22 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   policy_arn = aws_iam_policy.s3_full_access_policy.arn
 }
 
+resource "aws_iam_role_policy_attachment" "attach_app_s3_policy" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = aws_iam_policy.s3_view_access_policy.arn
+}
+
 resource "aws_iam_instance_profile" "asg_instance_profile" {
   name = "${var.app_name}-${var.app_environment}-asg-instance-profile"
   role = aws_iam_role.asg_instance_role.name
 }
+
+resource "aws_iam_role_policy_attachment" "attach_comprehend_readonly" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/ComprehendFullAccess"
+}
+resource "aws_iam_role_policy_attachment" "attach_rekognition_policy" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
+}
+

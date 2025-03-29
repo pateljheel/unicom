@@ -29,12 +29,12 @@ resource "aws_lb" "alb" {
 # ALB target group
 resource "aws_lb_target_group" "alb_target_group" {
   name     = "${var.app_name}-${var.app_environment}-asg-tg"
-  port     = 80
+  port     = 8080
   protocol = "HTTP"
   vpc_id   = local.alb_vpc_id
 
   health_check {
-    path                = "/"
+    path                = "/health"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
@@ -69,6 +69,8 @@ resource "aws_lb_listener" "alb_http_listener" {
       "Environment" = var.app_environment,
     }
   )
+
+  depends_on = [ aws_lb_target_group.alb_target_group ]
 }
 
 # ALB security group

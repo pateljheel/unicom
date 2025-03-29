@@ -26,6 +26,7 @@ resource "aws_docdb_cluster" "db_cluster" {
   preferred_backup_window = "07:00-09:00"
   db_subnet_group_name    = aws_docdb_subnet_group.db_subnet_group.name
   skip_final_snapshot     = var.db_skip_final_snapshot
+  vpc_security_group_ids  = [aws_security_group.db_sg.id]
 
   tags = merge(
     var.additional_tags,
@@ -37,7 +38,7 @@ resource "aws_docdb_cluster" "db_cluster" {
 }
 
 # DocumentDB Instances
-resource "aws_docdb_cluster_instance" "dn_instances" {
+resource "aws_docdb_cluster_instance" "db_instances" {
   count              = 1
   identifier         = "${var.app_name}-${var.app_environment}-db-instance-${count.index}"
   cluster_identifier = aws_docdb_cluster.db_cluster.id

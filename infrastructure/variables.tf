@@ -34,19 +34,19 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   type        = list(string)
   description = "Public Subnet CIDR values"
-  default     = ["10.0.1.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   type        = list(string)
   description = "Private Subnet CIDR values"
-  default     = ["10.0.4.0/24"]
+  default     = ["10.0.4.0/24", "10.0.5.0/24"]
 }
 
 variable "azs" {
   type        = list(string)
   description = "Availability Zones"
-  default     = ["us-east-2a"]
+  default     = ["us-east-2a", "us-east-2b"] # Update this to match your desired availability zones
 }
 
 
@@ -54,7 +54,7 @@ variable "azs" {
 variable "ami_id" {
   description = "AMI ID to use for the EC2 instance"
   type        = string
-  default     = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
+  default     = null
 }
 variable "instance_type" {
   description = "Instance type for the EC2 instance"
@@ -109,7 +109,27 @@ variable "images_bucket_name" {
   type        = string
 }
 
-variable "draft_images_bucket_name" {
-  description = "S3 bucket name for draft images"
+variable "app_bucket_name" {
+  description = "S3 bucket name for the application"
   type        = string
+}
+
+# cloudfront variables
+variable "s3_images_origin_id" {
+  description = "Origin ID for S3 bucket in CloudFront"
+  type        = string
+}
+variable "s3_website_origin_id" {
+  description = "Origin ID for S3 bucket in CloudFront"
+  type        = string
+}
+variable "s3_distribution_price_class" {
+  description = "Price class for CloudFront distribution"
+  type        = string
+  default     = "PriceClass_100" # Options: PriceClass_100, PriceClass_200, PriceClass_All
+}
+variable "s3_distribution_public_key" {
+  description = "Path to the public key for CloudFront signing"
+  type        = string
+  default     = "keys/public_key.pem" # Update this path to your public key file
 }

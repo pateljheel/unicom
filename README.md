@@ -41,3 +41,63 @@ This is the source repository for application and infrastructure code.
     In `backend.tf` `unifamily` profile is set for backend bucket.
 
 - In `provider.tf` use `default` profile to launch resources in your own account or use `unifamily` profile to launch resources in the central (bucket) account.
+
+# Local development environment
+
+- Install mongodb locally or use docker container.
+
+    ```bash
+    docker pull mongo
+    docker run -d -p 27017:27017 --name mongodb \
+      -e MONGO_INITDB_ROOT_USERNAME=unicom \
+      -e MONGO_INITDB_ROOT_PASSWORD=unicom \
+      -e MONGO_INITDB_DATABASE=unicom \
+      mongo
+    ```
+
+- Now you can use mongodb in the local environment to implement and test the api.
+
+# Deploying the application on AWS
+
+## Pre-requisites
+
+0. Developer machine must have admin access to the AWS project we AWS CLI configured.
+
+1. Create public private key pair in the `infrastructure/keys` directory. This is a unique key pair for the deployment. Use the same key pair for future terraform runs for the same deployment.
+
+    ```bash
+    cd infrastructure/keys
+    openssl genrsa -out private_key.pem 2048
+    openssl rsa -pubout -in private_key.pem -out public_key.pem
+    ```
+
+2. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrasture/backend` to match the created bucket.
+
+## Deploy/Update infrastructure and website
+
+1. Deploy or update (for first time run for the deployment) the infrastructure using terraform.
+
+    ```bash
+    cd infrastructure
+    terraform init
+    terraform apply
+    ```
+
+2. Build the website in the `website/unicom` directory.
+
+    ```bash
+    cd ../website/unicom
+    npm install
+    npm run build
+    ```
+
+3. Again run terraform to sync website to the website s3 bucket.
+
+    ```bash
+    cd ../../infrastructure
+    terraform init
+    terraform apply
+    ```
+
+
+## API Docs are available at the API endpoint `/apidocs`.
