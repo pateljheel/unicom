@@ -22,7 +22,8 @@ if bool(os.getenv("MONGO_USE_TLS", False)):
         minPoolSize=int(os.getenv("MONGO_MIN_POOL_SIZE", 5)),
         tls=bool(os.getenv("MONGO_USE_TLS", False)),
         tlsCAFile=os.getenv("MONGO_CA_FILE"),
-        connect=True
+        connect=True,
+        retryWrites=False # Disable retryWrites for compatibility with DocumentDB
     )
 else:
     mongo_client = MongoClient(
@@ -33,7 +34,8 @@ else:
         authSource=os.getenv("MONGO_AUTH_SOURCE", "admin"),
         maxPoolSize=int(os.getenv("MONGO_MAX_POOL_SIZE", 50)),
         minPoolSize=int(os.getenv("MONGO_MIN_POOL_SIZE", 5)),
-        connect=True
+        connect=True,
+        retryWrites=False # Disable retryWrites for compatibility with some DocumentDB
     )
 
 print(os.getenv("MONGO_HOST"))

@@ -3,8 +3,8 @@ import json
 import requests
 
 # Replace with your actual token and endpoint
-API_URL = "http://localhost:5000/posts"
-JWT_TOKEN = "eyJraWQiOiJkUklaZElRanFnaVk2SkJBaGRvMG05S1RHOVJjTjNQR3ZBc2cxRWxRR0tJPSIsImFsZyI6IlJTMjU2In0.eyJhdF9oYXNoIjoiSmZkZm0wRl9naU1Id1pWTkxyakUxdyIsInN1YiI6ImExY2IwNWMwLWEwODEtNzBhMy1kNTZjLTk2ZjA5MjdiN2MxYSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0yLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMl9vYjl2NFpGZngiLCJjb2duaXRvOnVzZXJuYW1lIjoiYTFjYjA1YzAtYTA4MS03MGEzLWQ1NmMtOTZmMDkyN2I3YzFhIiwiYXVkIjoiNW9nc3BhOTEyNmE1cWJiYWhzOWcxOHJ2NG0iLCJldmVudF9pZCI6ImRkMTA1YTdkLTJlN2QtNDU0Yy1hYjVjLTMxNWY4ZDEzZjg4NSIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzQzMTc0MjE4LCJleHAiOjE3NDMyNjA2MTgsImlhdCI6MTc0MzE3NDIxOCwianRpIjoiN2QzNDg1ODUtNDgzNy00YmY1LWE4NmYtOGJiZWZhNTI2Y2IzIiwiZW1haWwiOiJqaGVlbHBhdGVsMTVAZ21haWwuY29tIn0.sw4St6JoMVmFwEoTKSRHzOeOOErHNvoGpJTRqRASKonBdwH_ZaTD-Ve5PQS9BeLXDozbUOxoNIj1HOs9EitvTy0vxl6irZgA2kwLlRvzIOQPwQsaNlKoOc9_NR0J3joXQyZAjRgYKXxW4_V8n6i-CPaMuAYbi-hR5ngzxk2gPvVVP0PjHsaal4R5rOjwEk8zEwY6Q8lmAJXtJcKZ_S_MiFr5SvfL-mB4P7s2ISjiWUq--46HGKIr4HICcqu7QiYlKs4Qn3C5_QRGfk9cGNN_oEovOMoqGZcm898truzaXBqfnU_uaxYpZ5m1j28O65OPkcmmGTonLdXtDVq2gm-wgw"
+API_URL = "https://x26jf1myka.execute-api.us-east-2.amazonaws.com/posts"
+JWT_TOKEN = "eyJraWQiOiJMcE9DZVk5bldtVUwwem1mYkJyd203K3ZsVVwvU2Jjdk41T2RmQzVNY2tGUT0iLCJhbGciOiJSUzI1NiJ9.eyJhdF9oYXNoIjoiZWVJMkduaHVJRFZWZnVYdUlMM3QzUSIsInN1YiI6ImQxZmI0NTAwLTMwNzEtNzAwNC05NWFiLTc1ZTAyZTA1N2UxOCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0yLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMl9DY01mc2l2THQiLCJjb2duaXRvOnVzZXJuYW1lIjoiZDFmYjQ1MDAtMzA3MS03MDA0LTk1YWItNzVlMDJlMDU3ZTE4IiwiYXVkIjoiNXExZm5idHZzOGZjdTluam5kcmxhaG4xaXQiLCJldmVudF9pZCI6IjcwYTVhZDQ2LTM5MWEtNDU3NC05NjI4LTIwNDMyNjczYjM4MCIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzQzMjc1Njk2LCJleHAiOjE3NDMzNjIwOTYsImlhdCI6MTc0MzI3NTY5NiwianRpIjoiMGZhMWE5NGItMDc1Mi00MjNkLWFmODUtN2FiMmM3OTBhNWRiIiwiZW1haWwiOiJqcDk5NTlAZy5yaXQuZWR1In0.i9dL13fUlNlaKUnct_itP9T4cvk_LJVVnTH4aBw0GXC81I75QIIcuCoDekidcjHzQYOFANyzUaz96Nc93_rTYODqF3gvyEiFNh2xsiK4W_F844CjGeFybP1v-EAJucThO4POf12QDksPCLXtGcVrb9OHfasP5lLCS39-y_axyXtXz5BcgkfWuVK9pQh5NNjin26gasNZW6debEXQL_Q6lZFVW17FBZEkrTvcjdHxqzIslK8b4kTsNo490UTySCNIRBEWtzs8-1rigAA_4mrB0JTzjvlw5-xQ9vhxcQa8t9DNK1skjx_-CFvvaz2tedcMPNkxBR0o507eN1gZTn2ZUQ"
 
 # Encode images to base64
 def encode_image(path):
@@ -19,8 +19,8 @@ payload = {
     "price": 45.99,
     "item": "Bookshelf",
     "images": [
-        encode_image("MCP_RCA_1.png"),
-        encode_image("MCP_RCA_1.png"),
+        encode_image("MCP_RCA.png"),
+        encode_image("MCP_RCA.png"),
     ],
     "sub_category": "FURNITURE"
 }
@@ -33,4 +33,4 @@ headers = {
 response = requests.post(API_URL, data=json.dumps(payload), headers=headers)
 
 print("Status:", response.status_code)
-print("Response:", response.json())
+print("Response:", response.text)

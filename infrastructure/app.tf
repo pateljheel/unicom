@@ -43,6 +43,21 @@ locals {
     cloudfront_private_key_path = "../infrastructure/keys/private_key.pem"
   })
 
+  mime_types = {
+    html = "text/html"
+    css  = "text/css"
+    js   = "application/javascript"
+    json = "application/json"
+    png  = "image/png"
+    jpg  = "image/jpeg"
+    jpeg = "image/jpeg"
+    svg  = "image/svg+xml"
+    ico  = "image/x-icon"
+    txt  = "text/plain"
+    map  = "application/json"
+    webmanifest = "application/manifest+json"
+  }
+
   website_config = {
     base_url           = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cognito_login_url  = "https://${aws_cognito_user_pool_domain.userpool_domain.domain}.auth.${var.app_region}.amazoncognito.com/login?client_id=${aws_cognito_user_pool_client.userpool_client.id}&response_type=token&scope=openid+email+profile&redirect_uri=https://${aws_cloudfront_distribution.s3_distribution.domain_name}"
@@ -78,6 +93,12 @@ resource "aws_s3_object" "website_files" {
   key    = "${tolist(local.build_dir_files)[count.index]}"
   source = "${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}"
   etag   = filemd5("${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}")
+
+  content_type = lookup(
+    local.mime_types,
+    lower(regex("\\.([^.]+)$", tolist(local.build_dir_files)[count.index])[0]),
+    "binary/octet-stream"
+  )
 }
 
 resource "aws_s3_object" "generated_env" {
