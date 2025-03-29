@@ -109,13 +109,17 @@ variable "images_bucket_name" {
   type        = string
 }
 
-variable "draft_images_bucket_name" {
-  description = "S3 bucket name for draft images"
+variable "app_bucket_name" {
+  description = "S3 bucket name for the application"
   type        = string
 }
 
 # cloudfront variables
-variable "s3_origin_id" {
+variable "s3_images_origin_id" {
+  description = "Origin ID for S3 bucket in CloudFront"
+  type        = string
+}
+variable "s3_website_origin_id" {
   description = "Origin ID for S3 bucket in CloudFront"
   type        = string
 }

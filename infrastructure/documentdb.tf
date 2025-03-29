@@ -26,6 +26,7 @@ resource "aws_docdb_cluster" "db_cluster" {
   preferred_backup_window = "07:00-09:00"
   db_subnet_group_name    = aws_docdb_subnet_group.db_subnet_group.name
   skip_final_snapshot     = var.db_skip_final_snapshot
+  vpc_security_group_ids  = [aws_security_group.db_sg.id]
 
   tags = merge(
     var.additional_tags,
@@ -37,7 +38,7 @@ resource "aws_docdb_cluster" "db_cluster" {
 }
 
 # DocumentDB Instances
-resource "aws_docdb_cluster_instance" "dn_instances" {
+resource "aws_docdb_cluster_instance" "db_instances" {
   count              = 1
   identifier         = "${var.app_name}-${var.app_environment}-db-instance-${count.index}"
   cluster_identifier = aws_docdb_cluster.db_cluster.id
@@ -78,6 +79,16 @@ resource "aws_security_group_rule" "db_allow_all_outbound" {
   cidr_blocks       = ["0.0.0.0/0"]
   description       = "Allow all outbound"
 }
+
+# resource "aws_security_group_rule" "db_allow_all_inbound" {
+#   type              = "ingress"
+#   protocol          = "-1"
+#   from_port         = 27017
+#   to_port           = 27017
+#   security_group_id = aws_security_group.db_sg.id
+#   cidr_blocks       = ["0.0.0.0/0"]
+#   description       = "Allow all inbound"
+# }
 
 # Allow HTTP from internal load balancer
 resource "aws_security_group_rule" "db_allow_from_asg" {

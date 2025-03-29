@@ -543,7 +543,7 @@ def get_signed_cookie():
     policy = f"""{{
       "Statement": [
         {{
-          "Resource": "{CLOUDFRONT_URL}post_*/*",
+          "Resource": "{CLOUDFRONT_URL}published/**",
           "Condition": {{
             "DateLessThan": {{
               "AWS:EpochTime": {expires}
@@ -596,3 +596,10 @@ def delete_current_user():
     )
 
     return jsonify({"message": "Your account and posts have been deleted"}), 200
+
+@routes.route('/health', methods=['GET'])
+def health_check():
+    """
+    Health check endpoint to verify the service is running.
+    """
+    return jsonify({"status": "ok", "message": "API is running"}), 200

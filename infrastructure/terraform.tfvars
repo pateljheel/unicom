@@ -4,7 +4,7 @@ app_environment = "dev"
 app_region = "us-east-2"
 
 # ec2 variables
-# ami_id = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
+ami_id = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
 # instance_type = "t3.micro"
 key_name = "swen-614-activity-key" # Change this to your key name
 
@@ -16,7 +16,8 @@ db_instance_class = "db.t3.medium"
 # s3 variables
 website_bucket_name = "unicom-website"
 images_bucket_name = "unicom-images"
-draft_images_bucket_name = "unicom-draft-images"
+app_bucket_name = "unicom-app" # Change this to your app bucket name
 
 # cloudfront variables
-s3_origin_id = "unicom-s3-origin"
+s3_images_origin_id = "unicom-s3-images-origin"
+s3_website_origin_id = "unicom-s3-website-origin"

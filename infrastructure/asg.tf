@@ -3,13 +3,23 @@ locals {
   asg_private_subnets = aws_subnet.private_subnets.*.id
 }
 
+
+data "template_file" "ec2_user_data" {
+  template = file("${path.module}/scripts/unicom_api_bootstrap.sh.tpl")
+
+  vars = {
+    aws_region = var.app_region
+    app_bucket = aws_s3_bucket.app_bucket.bucket
+  }
+}
+
 # ASG template
 resource "aws_launch_template" "asg_template" {
   name          = "${var.app_name}-${var.app_environment}-asg-template"
   image_id      = var.ami_id
   instance_type = var.instance_type
 
-  user_data = base64encode(file("${path.module}/scripts/ec2_bootstrap.sh"))
+  user_data = base64encode(data.template_file.ec2_user_data.rendered)
 
   tags = merge(
     var.additional_tags,
@@ -114,8 +124,8 @@ resource "aws_security_group_rule" "asg_allow_all_outbound" {
 resource "aws_security_group_rule" "allow_http_from_lb" {
   type                     = "ingress"
   protocol                 = "tcp"
-  from_port                = 80
-  to_port                  = 80
+  from_port                = 8080
+  to_port                  = 8080
   security_group_id        = aws_security_group.asg_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
 
@@ -157,6 +167,11 @@ resource "aws_iam_role" "asg_instance_role" {
 resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.asg_instance_role.name
   policy_arn = aws_iam_policy.s3_full_access_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach_app_s3_policy" {
+  role       = aws_iam_role.asg_instance_role.name
+  policy_arn = aws_iam_policy.s3_view_access_policy.arn
 }
 
 resource "aws_iam_instance_profile" "asg_instance_profile" {
