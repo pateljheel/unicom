@@ -62,8 +62,9 @@ resource "aws_cognito_user_pool_client" "userpool_client" {
     id_token      = "days"
     refresh_token = "days"
   }
-  callback_urls = ["http://localhost:3000"]
-  logout_urls   = ["http://localhost:3000"]
+  callback_urls = ["https://${aws_cloudfront_distribution.s3_distribution.domain_name}", # CloudFront distribution URL
+                   "http://localhost:3000/"] # Local development callback URL
+  logout_urls   = ["https://${aws_cloudfront_distribution.s3_distribution.domain_name}", "http://localhost:3000/"]
 
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["implicit"]

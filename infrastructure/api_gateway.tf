@@ -99,10 +99,16 @@ resource "aws_apigatewayv2_authorizer" "jwt_authorizer" {
 
 resource "aws_apigatewayv2_route" "proxy_route" {
   api_id    = aws_apigatewayv2_api.http_api.id
-  route_key = "ANY /{proxy+}"
+  route_key = "ANY /api/{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
 
   authorizer_id       = aws_apigatewayv2_authorizer.jwt_authorizer.id
   authorization_type  = "JWT"
+}
+
+resource "aws_apigatewayv2_route" "apidocs_route" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "ANY /{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
 }
 

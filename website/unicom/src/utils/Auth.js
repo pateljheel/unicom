@@ -1,11 +1,10 @@
-const COGNITO_LOGIN_URL = 'https://unicom-dev-userpool-domain.auth.us-east-2.amazoncognito.com/login?client_id=3la4d8muaa4k2p6j4aom5ddpoh&response_type=token&scope=email+openid+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+import infra_config from '../infra_config.json'; // Ensure infra_config is imported to initialize environment variables
+
+const COGNITO_LOGIN_URL = infra_config.cognito_login_url; // Replace with your actual Cognito login URL
 
 const TOKEN_STRING = 'id_token';
 
-const COGNITO_LOGOUT_URL =
-  'https://unicom-dev-userpool-domain.auth.us-east-2.amazoncognito.com/logout?' +
-  'client_id=3la4d8muaa4k2p6j4aom5ddpoh&' +
-  'logout_uri=http%3A%2F%2Flocalhost%3A3000';
+const COGNITO_LOGOUT_URL = infra_config.cognito_logout_url; // Replace with your actual Cognito logout URL
 
 export function logout() {
   localStorage.removeItem(TOKEN_STRING);

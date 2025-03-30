@@ -37,14 +37,21 @@ override.tf.json
 terraform.rc
 
 # Ignore local environment files
+.env
+env/
+
+# Ignore local environment files
 env/
 venv/
 __pycache__/
 
-# Ignore node directory
+# Ignore node_modules
 node_modules/
+# Ignore package-lock.json
+package-lock.json
 
-
+# Ignore ssh keys
+*.pem
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
