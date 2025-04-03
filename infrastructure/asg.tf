@@ -163,15 +163,15 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
 }
 
 # # Allow SSH from everywhere
-# resource "aws_security_group_rule" "allow_ssh" {
-#   type              = "ingress"
-#   protocol          = "tcp"
-#   from_port         = 22
-#   to_port           = 22
-#   security_group_id = aws_security_group.asg_sg.id
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   description       = "Allow SSH from everywhere"
-# }
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  security_group_id = aws_security_group.asg_sg.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow SSH from everywhere"
+}
 
 resource "aws_iam_role" "asg_instance_role" {
   name = "${var.app_name}-${var.app_environment}-asg-role"
