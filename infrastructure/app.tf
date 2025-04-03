@@ -118,5 +118,6 @@ resource "local_file" "write_local_env" {
 resource "local_file" "website_config" {
   content  = jsonencode(local.website_config)
   filename = "${path.module}/../website/unicom/src/infra_config.json"
+  # filename = "${path.module}/../website/unicom/src/infra_config.js"
 }
 
