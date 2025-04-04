@@ -101,3 +101,27 @@ export default function Home() {
     </div>
   );
 }
+
+
+// "use client";
+
+// import { redirectToLogin, getStoredIdToken, isTokenExpired } from "@/lib/auth";
+// import { useEffect, useState } from "react";
+
+// export default function HomePage() {
+//   const [token, setToken] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     const storedToken = getStoredIdToken();
+
+//     if (!storedToken || isTokenExpired(storedToken)) {
+//       console.log("No valid token, redirecting to login...");
+//       redirectToLogin();
+//     } else {
+//       console.log("Token found:", storedToken);
+//       setToken(storedToken);
+//     }
+//   }, []);
+
+//   return <h1>Welcome to the Secure Page</h1>;
+// }

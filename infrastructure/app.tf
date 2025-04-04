@@ -1,7 +1,10 @@
 
 locals {
-  build_dir_files  = fileset("${path.module}/../website/unicom/build", "**")
-  build_dir_exists = fileexists("${path.module}/../website/unicom/build/index.html")
+  # build_dir_files  = fileset("${path.module}/../website/unicom/build", "**")
+  build_dir_files  = fileset("${path.module}/../Next-app/unicom-webapp/public", "*")
+  # build_dir_exists = fileexists("${path.module}/../website/unicom/build/index.html")
+  # build_dir_exists = fileexists("${path.module}/../website/unicom/build/index.html")
+  build_dir_exists = fileexists("${path.module}/../Next-app/unicom-webapp/app/layout.tsx")
 
   env_content = templatefile("${path.module}/../api/env.tpl", {
     flask_port                  = 8080
@@ -91,8 +94,10 @@ resource "aws_s3_object" "website_files" {
 
   bucket = aws_s3_bucket.website_bucket.id
   key    = "${tolist(local.build_dir_files)[count.index]}"
-  source = "${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}"
-  etag   = filemd5("${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}")
+  source = "${path.module}/../Next-app/unicom-webapp/public/${tolist(local.build_dir_files)[count.index]}"
+  etag = "${filemd5("${path.module}/../Next-app/unicom-webapp/public/${tolist(local.build_dir_files)[count.index]}")}"
+  # source = "${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}"
+  # etag   = filemd5("${path.module}/../website/unicom/build/${tolist(local.build_dir_files)[count.index]}")
 
   content_type = lookup(
     local.mime_types,
@@ -117,7 +122,7 @@ resource "local_file" "write_local_env" {
 
 resource "local_file" "website_config" {
   content  = jsonencode(local.website_config)
-  filename = "${path.module}/../website/unicom/src/infra_config.json"
-  # filename = "${path.module}/../website/unicom/src/infra_config.js"
+  # filename = "${path.module}/../website/unicom/src/infra_config.json"
+  filename = "${path.module}/../Next-app/unicom-webapp/public/infra_config.json"
 }
 
