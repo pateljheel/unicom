@@ -1,6 +1,6 @@
 {
     "base_url": "http://localhost:3000/",
-    "cognito_login_url": "https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/login?client_id=10tpnkkec5edbdmvh1c9oru8n8\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=http://localhost:3000/",
-    "cognito_logout_url": "https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/logout?client_id=10tpnkkec5edbdmvh1c9oru8n8\u0026logout_uri=http://localhost:3000/",
-    "post_images_url": "https://d178mzgclccfgh.cloudfront.net/published/"
+    "cognito_login_url": "https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/login?client_id=5tu0nt5585givj5atcdsmmdpsv\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=http://localhost:3000/",
+    "cognito_logout_url": "https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/logout?client_id=5tu0nt5585givj5atcdsmmdpsv\u0026logout_uri=http://localhost:3000/",
+    "post_images_url": "https://d7waz3bec35ei.cloudfront.net/published/"
 }
