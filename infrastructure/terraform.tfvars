@@ -12,7 +12,7 @@ azs = ["us-east-1a", "us-east-1b"]
 # ec2 variables
 # ami_id = "ami-0fc82f4dabc05670b" # Amazon Linux 2023 AMI
 # instance_type = "t3.micro"
-# key_name = "swen-614-activity-key" # Change this to your key name
+key_name = "swen-614-activity-key" # Change this to your key name
 
 # docdb variables
 db_username = "unicom"

@@ -86,7 +86,7 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity          = 1
   vpc_zone_identifier       = local.asg_private_subnets
   health_check_type         = "ELB"
-  health_check_grace_period = 300
+  health_check_grace_period = 500
 
   dynamic "tag" {
     for_each = merge(
@@ -162,16 +162,16 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   description = "Allow HTTP from internal load balancer"
 }
 
-# # Allow SSH from everywhere
-# resource "aws_security_group_rule" "allow_ssh" {
-#   type              = "ingress"
-#   protocol          = "tcp"
-#   from_port         = 22
-#   to_port           = 22
-#   security_group_id = aws_security_group.asg_sg.id
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   description       = "Allow SSH from everywhere"
-# }
+# Allow SSH from everywhere
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  security_group_id = aws_security_group.asg_sg.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow SSH from everywhere"
+}
 
 resource "aws_iam_role" "asg_instance_role" {
   name = "${var.app_name}-${var.app_environment}-asg-role"
