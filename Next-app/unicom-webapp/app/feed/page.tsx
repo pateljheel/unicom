@@ -21,6 +21,9 @@ export default function MyPostsPage() {
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null); // 👈 Modal control
+  const [searchTerm, setSearchTerm] = useState(""); // what user types
+  const [searchQuery, setSearchQuery] = useState(""); // confirmed search
+
 
   const CLOUDFRONT_HOST = "https://dpro9nxekr9pa.cloudfront.net/";
 
@@ -33,25 +36,25 @@ export default function MyPostsPage() {
           console.error("No ID token found");
           return;
         }
-
+  
         const response = await fetch(
-          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}`,
+          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
             },
           }
         );
-
+  
         if (!response.ok) {
           console.error("Failed to fetch posts", response.status);
           return;
         }
-
+  
         const data = await response.json();
         let fetchedPosts = data.posts || [];
         setTotal(data.total || 0);
-
+  
         fetchedPosts = fetchedPosts.map((post: Post) => {
           if (post.image_url && post.image_url.length > 0) {
             const updatedUrls = post.image_url.map((url) => {
@@ -66,7 +69,7 @@ export default function MyPostsPage() {
           }
           return post;
         });
-
+  
         setPosts(fetchedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -74,9 +77,10 @@ export default function MyPostsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchPosts();
-  }, [page, limit]);
+  }, [page, limit, searchQuery]); // ✅ Listen to searchQuery, NOT searchTerm
+  
 
   const handleNext = () => {
     if (page * limit < total) {
@@ -118,6 +122,25 @@ export default function MyPostsPage() {
       {/* My Feed Section */}
       <section className="max-w-6xl mx-auto p-4">
         <h2 className="text-2xl font-semibold mb-4">My Feed</h2>
+
+        <div className="flex items-center mb-6">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search posts..."
+            className="border p-2 rounded-l-md w-full max-w-md"
+          />
+          <button
+          onClick={() => {
+            setPage(1);
+            setSearchQuery(searchTerm); // ✅ Confirm searchTerm → searchQuery
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
+        >
+          Search
+        </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {posts.map((post) => (
