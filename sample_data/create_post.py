@@ -1,48 +1,37 @@
-# import base64
-# import json
-# import requests
-
-# # Replace with your actual token and endpoint
-# API_URL = "https://sdip576qrl.execute-api.us-east-1.amazonaws.com/api/posts"
-# JWT_TOKEN = "eyJraWQiOiJcL0xOeFwvSlF6YmNSdVwvcEJ0c0pLV1FHUkUxVmQzQnhaUFZuSlBlQmhKTXlJPSIsImFsZyI6IlJTMjU2In0.eyJhdF9oYXNoIjoiLXR5dkNQSU9HODZOVnVtdXlKdkU3QSIsInN1YiI6ImU0MDhkNGI4LTYwYTEtNzBmNS04ZmQ1LTI1MzYzZDc3MzViZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV83QjVaZnhNMkYiLCJjb2duaXRvOnVzZXJuYW1lIjoiZTQwOGQ0YjgtNjBhMS03MGY1LThmZDUtMjUzNjNkNzczNWJlIiwiYXVkIjoiNXR1MG50NTU4NWdpdmo1YXRjZHNtbWRwc3YiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc0Mzg2MTcwNCwiZXhwIjoxNzQzOTQ4MTA0LCJpYXQiOjE3NDM4NjE3MDQsImp0aSI6IjBhNTUyMzM4LTFlZmMtNGJjYi04Y2E2LTUzNjcwNWU1ZmFlMSIsImVtYWlsIjoiYmEyMTE2QGcucml0LmVkdSJ9.IfwEHpxu2taw7lyJP0ougEHbCAtQvMLqJl3Yvf-9TWvg846hvEbgZW6UJu-ITCeGkvwjIcHf-tzro8gxLQHVmTk4rfgkurEfr_ycoIE6bdNaS5TCkLD95GtQ4hVXzqAnBKGtRemrCZPDVUYPrdb_Oy1z62ER_WShahekuZUKbiind6kcBLybmvDOeqfP76BUVMDT4X9kzb0LvpsPGQsTZzYzWdoJF1DRMUZvIxfcxaEAbEkjSmfQ1yvPogbPcug10uSjtDO6KfXG5ZEwQy6p56kY2TG6UZiZSogUw0cmdvG5VVTgjm_DyNttRzTmlO39ZWp8I042dfU4cLyhlIVsTw"
-
-# # Encode images to base64
-# def encode_image(path):
-#     with open(path, "rb") as image_file:
-#         return base64.b64encode(image_file.read()).decode("utf-8")
-
-# # Prepare the payload
-# payload = {
-#     "category": "SELL",
-#     "title": "Gently used bookshelf",
-#     "description": "Selling a new bookshelf.",
-#     "price": 45.99,
-#     "item": "Bookshelf",
-#     "images": [
-#         encode_image("GUN.jpg"),
-#         encode_image("MCP_RCA.png"),
-#     ],
-#     "sub_category": "FURNITURE"
-# }
-
-# headers = {
-#     "Authorization": f"Bearer {JWT_TOKEN}",
-#     "Content-Type": "application/json"
-# }
-
-# response = requests.post(API_URL, data=json.dumps(payload), headers=headers)
-
-# print("Status:", response.status_code)
-# print("Response:", response.text)
-
-
-
+import base64
+import json
 import requests
 
-API_URL = "https://sdip576qrl.execute-api.us-east-1.amazonaws.com/api"
+# Replace with your actual token and endpoint
+API_URL = "https://hnaztd852f.execute-api.us-east-1.amazonaws.com/api/posts"
+JWT_TOKEN = "eyJraWQiOiJXQVlBNFVPajFpT2tUcHpPRzg2cERlVzBUZzVkZlwvcDVJMnkyWVJlM2dWMD0iLCJhbGciOiJSUzI1NiJ9.eyJhdF9oYXNoIjoiZ1F6d0NaOUk5bDA0bVQ1SXhfVW83USIsInN1YiI6IjA0MTgxNGQ4LTAwMTEtNzBhYS0wNmNmLTBmMGI0OWNiZGU4OSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9oclFWNnhaR3IiLCJjb2duaXRvOnVzZXJuYW1lIjoiMDQxODE0ZDgtMDAxMS03MGFhLTA2Y2YtMGYwYjQ5Y2JkZTg5IiwiYXVkIjoiNjFtbXQ1cWFrZzE3Z3I3cm91bzd1dXNyYWYiLCJldmVudF9pZCI6ImY0MGQwNGUzLTI3NzMtNDlhNC1iZmNmLTcxYmJlOGJiYTc1OSIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzQzNjk4MTc5LCJleHAiOjE3NDM3ODQ1NzksImlhdCI6MTc0MzY5ODE3OSwianRpIjoiMGNjOGQ1MjctNzNkOC00Mjg1LWJmY2QtNzY0NTZkNDI4NWYwIiwiZW1haWwiOiJqcDk5NTlAZy5yaXQuZWR1In0.W2EJBvFK5occNudJyzwQe-Qxc-V1nmkzrjazGIiCYjDf0VYoReWft82UgxKG2CCcifx-jWeNqArXG6_NKGupqYYET2bzGPZjD1BlLuPi077DA4G1tQhMP_W9NIL_z8IQJ-boFodgVfUmZ5C4HXqLJ8eaasSIlAO9x_YzLbTaZl2SdUjXqY3SXj1Op1_MKS7RLHBjTjz-RBvRgtFVIupa89RFVsxaN0syKROjcypeA6i_Ap5b7mhjm007KuppAqXJgsH7QQv4yAJf-TpDLLTWss611mH8ZSbW4aZqKpJlG7C0cDLP4OiGff0fK3NBakBB7A7pdZduuIRKGiQ5o81XMg"
 
-try:
-    response = requests.get(API_URL)
-    print("Status Code:", response.status_code)
-except requests.exceptions.RequestException as e:
-    print("Error:", e)
+# Encode images to base64
+def encode_image(path):
+    with open(path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
+# Prepare the payload
+payload = {
+    "category": "SELL",
+    "title": "Gently used bookshelf",
+    "description": "Selling a new bookshelf.",
+    "price": 45.99,
+    "item": "Bookshelf",
+    "images": [
+        encode_image("MCP_RCA.png"),
+        encode_image("MCP_RCA.png"),
+    ],
+    "sub_category": "FURNITURE"
+}
+
+headers = {
+    "Authorization": f"Bearer {JWT_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+response = requests.post(API_URL, data=json.dumps(payload), headers=headers)
+
+print("Status:", response.status_code)
+print("Response:", response.text)
+

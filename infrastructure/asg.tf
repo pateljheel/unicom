@@ -86,7 +86,7 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity          = 1
   vpc_zone_identifier       = local.asg_private_subnets
   health_check_type         = "ELB"
-  health_check_grace_period = 300
+  health_check_grace_period = 500
 
   dynamic "tag" {
     for_each = merge(
