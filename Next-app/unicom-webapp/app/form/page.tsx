@@ -1,11 +1,123 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 // Adjust these imports to match your shadcn UI setup
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ListingForm() {
   const [category, setCategory] = useState("");
+  const router = useRouter();
+  const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts";
+
+  // Log token on mount for debugging
+  useEffect(() => {
+    console.log("Token in localStorage:", localStorage.getItem("token"));
+  }, []);
+
+  // Helper function to convert file to Base64
+  const toBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Retrieve token from localStorage (if available)
+    const token = localStorage.getItem("token");
+
+    const formData: any = {
+      category: category,
+      title: "",
+      description: "",
+      images: []
+    };
+
+    if (category === "roommate") {
+      formData.description = (document.getElementById("description") as HTMLTextAreaElement)?.value;
+      formData.community = (document.getElementById("apartmentName") as HTMLInputElement)?.value;
+      formData.start_date = (document.getElementById("dateAvailability") as HTMLInputElement)?.value;
+      formData.rent = 1000; // Example value; adjust as needed
+      formData.general_preferences = "any";
+    } else if (category === "carpool") {
+      formData.from_location = (document.getElementById("pickupLocation") as HTMLInputElement)?.value;
+      formData.to_location = (document.getElementById("dropoffLocation") as HTMLInputElement)?.value;
+      const date = (document.getElementById("rideDate") as HTMLInputElement)?.value;
+      const time = (document.getElementById("rideTime") as HTMLInputElement)?.value;
+      formData.departure_time = new Date(`${date}T${time}`).toISOString();
+      formData.seats_available = parseInt(
+        (document.getElementById("availableSeats") as HTMLInputElement)?.value || "1"
+      );
+      formData.description = "Ride available";
+    } else if (category === "SELL") {
+      // Gather fields for SELL post
+      formData.title = (document.getElementById("title") as HTMLInputElement)?.value;
+      formData.description = (document.getElementById("itemDescription") as HTMLTextAreaElement)?.value;
+      formData.price = parseFloat(
+        (document.getElementById("itemPrice") as HTMLInputElement)?.value || "0"
+      );
+      formData.item = (document.getElementById("itemName") as HTMLInputElement)?.value;
+      formData.sub_category = (
+        document.getElementById("subCategory") as HTMLSelectElement
+      )?.value || "OTHER";
+
+      const files = (document.getElementById("uploadImagesSell") as HTMLInputElement)?.files;
+      const images: string[] = [];
+      if (files) {
+        for (let i = 0; i < files.length; i++) {
+          const base64 = await toBase64(files[i]);
+          images.push(base64);
+        }
+      }
+      formData.images = images;
+    }
+
+    // Print payload for debugging
+    console.log("Payload:", formData);
+
+    try {
+      // Build headers; include Authorization header only if token exists.
+      const headers: HeadersInit = {
+        "Content-Type": "application/json"
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Use relative URL so that the proxy handles the request.
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(formData),
+      });
+
+      // Check content type before parsing
+      const contentType = response.headers.get("Content-Type");
+      let result;
+      if (contentType && contentType.includes("application/json")) {
+        result = await response.json();
+      } else {
+        result = await response.text();
+        console.error("Expected JSON but received text:", result);
+      }
+
+      console.log("Response Status:", response.status);
+
+      if (response.status === 202) {
+        alert("Listing submitted successfully and is under moderation!");
+        router.push("/buttons");
+      } else {
+        alert("Error: " + (result.error || result || "Unknown error occurred"));
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Something went wrong while submitting the post.");
+    }
+  };
 
   return (
     <Card className="max-w-md mx-auto mt-10">
@@ -13,13 +125,10 @@ export default function ListingForm() {
         <CardTitle>Create Listing</CardTitle>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={handleSubmit}>
           {/* Category Dropdown */}
           <div className="mb-4">
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
               Category
             </label>
             <select
@@ -31,7 +140,7 @@ export default function ListingForm() {
               <option value="">Select a category</option>
               <option value="roommate">Roommate finder</option>
               <option value="carpool">Carpool</option>
-              <option value="sellItem">Sell Item</option>
+              <option value="SELL">Sell Item</option>
             </select>
           </div>
 
@@ -39,24 +148,18 @@ export default function ListingForm() {
           {category === "roommate" && (
             <>
               <div className="mb-4">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
                   id="description"
                   placeholder="Enter description"
-                  rows="3"
+                  rows={3}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 ></textarea>
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="apartmentName"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="apartmentName" className="block text-sm font-medium text-gray-700">
                   Apartment Name
                 </label>
                 <input
@@ -67,10 +170,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="dateAvailability"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="dateAvailability" className="block text-sm font-medium text-gray-700">
                   Date Availability
                 </label>
                 <input
@@ -80,10 +180,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="preferences"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="preferences" className="block text-sm font-medium text-gray-700">
                   Preferences
                 </label>
                 <div className="flex items-center">
@@ -98,10 +195,7 @@ export default function ListingForm() {
                 </div>
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="uploadImagesRoommate"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="uploadImagesRoommate" className="block text-sm font-medium text-gray-700">
                   Upload Images
                 </label>
                 <input
@@ -119,10 +213,7 @@ export default function ListingForm() {
           {category === "carpool" && (
             <>
               <div className="mb-4">
-                <label
-                  htmlFor="pickupLocation"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="pickupLocation" className="block text-sm font-medium text-gray-700">
                   Pickup Location
                 </label>
                 <input
@@ -133,10 +224,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="dropoffLocation"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="dropoffLocation" className="block text-sm font-medium text-gray-700">
                   Drop-off Location
                 </label>
                 <input
@@ -147,10 +235,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="rideDate"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="rideDate" className="block text-sm font-medium text-gray-700">
                   Ride Date
                 </label>
                 <input
@@ -160,10 +245,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="rideTime"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="rideTime" className="block text-sm font-medium text-gray-700">
                   Ride Time
                 </label>
                 <input
@@ -173,10 +255,7 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="availableSeats"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="availableSeats" className="block text-sm font-medium text-gray-700">
                   Available Seats
                 </label>
                 <input
@@ -191,13 +270,21 @@ export default function ListingForm() {
           )}
 
           {/* Fields for Sell Item */}
-          {category === "sellItem" && (
+          {category === "SELL" && (
             <>
               <div className="mb-4">
-                <label
-                  htmlFor="itemName"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  placeholder="Enter listing title"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">
                   Item Name
                 </label>
                 <input
@@ -208,24 +295,18 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="itemDescription"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="itemDescription" className="block text-sm font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
                   id="itemDescription"
                   placeholder="Enter item description"
-                  rows="3"
+                  rows={3}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 ></textarea>
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="itemPrice"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="itemPrice" className="block text-sm font-medium text-gray-700">
                   Price
                 </label>
                 <input
@@ -238,28 +319,22 @@ export default function ListingForm() {
                 />
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="itemCondition"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Condition
+                <label htmlFor="subCategory" className="block text-sm font-medium text-gray-700">
+                  Sub Category
                 </label>
                 <select
-                  id="itemCondition"
+                  id="subCategory"
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                  <option value="">Select condition</option>
-                  <option value="new">New</option>
-                  <option value="likeNew">Like New</option>
-                  <option value="used">Used</option>
-                  <option value="refurbished">Refurbished</option>
+                  <option value="">Select sub-category</option>
+                  <option value="FURNITURE">Furniture</option>
+                  <option value="ELECTRONICS">Electronics</option>
+                  <option value="CLOTHING">Clothing</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
               <div className="mb-4">
-                <label
-                  htmlFor="uploadImagesSell"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="uploadImagesSell" className="block text-sm font-medium text-gray-700">
                   Upload Images
                 </label>
                 <input

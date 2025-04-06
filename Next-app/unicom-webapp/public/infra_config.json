@@ -1,1 +1,7 @@
-{"base_url":"https://d7waz3bec35ei.cloudfront.net/","cognito_login_url":"https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/login?client_id=5tu0nt5585givj5atcdsmmdpsv\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=https://d7waz3bec35ei.cloudfront.net","cognito_logout_url":"https://unicom-dev-userpool-domain.auth.us-east-1.amazoncognito.com/logout?client_id=5tu0nt5585givj5atcdsmmdpsv\u0026logout_uri=https://d7waz3bec35ei.cloudfront.net","post_images_url":"https://d7waz3bec35ei.cloudfront.net/published/"}
+{
+    "api_url": "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/",
+    "base_url": "http://localhost:3000/",
+    "cognito_login_url": "https://unicom-dev-userpool.auth.us-east-1.amazoncognito.com/login?client_id=679bqj6seb7q7rg6hetmncg0i0\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=http://localhost:3000/",
+    "cognito_logout_url": "https://unicom-dev-userpool.auth.us-east-1.amazoncognito.com/logout?client_id=679bqj6seb7q7rg6hetmncg0i0\u0026logout_uri=http://localhost:3000/",
+    "post_images_url": "https://dpro9nxekr9pa.cloudfront.net/published/"
+}
