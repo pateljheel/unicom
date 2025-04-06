@@ -9,14 +9,6 @@ import {
   redirectToLogin,
 } from "@/lib/auth";
 
-// Define the shape of the context value
-interface AuthContextType {
-  token: string | null;
-  setToken: (token: string | null) => void;
-  isAuthenticated: boolean;
-  signedUrlData: SignedUrlData | null;
-}
-
 // Shape of signed URL data
 interface SignedUrlData {
   "CloudFront-Policy": string;
@@ -25,11 +17,28 @@ interface SignedUrlData {
   expires: number;
 }
 
+// Shape of User object decoded from id_token
+interface User {
+  email: string;
+  sub: string;
+  [key: string]: any; // To allow other attributes like `name`, `phone_number`, etc.
+}
+
+// Define the shape of the context value
+interface AuthContextType {
+  token: string | null;
+  user: User | null;
+  setToken: (token: string | null) => void;
+  isAuthenticated: boolean;
+  signedUrlData: SignedUrlData | null;
+}
+
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [signedUrlData, setSignedUrlData] = useState<SignedUrlData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,10 +52,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (urlToken) {
         storeIdToken(urlToken);
         setToken(urlToken);
+        parseUserFromToken(urlToken);
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       } else if (storedToken && !isTokenExpired(storedToken)) {
         setToken(storedToken);
+        parseUserFromToken(storedToken);
       } else {
         redirectToLogin();
       }
@@ -57,8 +68,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeToken();
   }, []);
 
+  const parseUserFromToken = (idToken: string) => {
+    try {
+      const payloadBase64 = idToken.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      setUser({
+        email: decodedPayload.email,
+        sub: decodedPayload.sub,
+        ...decodedPayload, // Include all other attributes just in case
+      });
+    } catch (err) {
+      console.error("Failed to decode token:", err);
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
-    // Fetch signed URL data once we have a valid token
     const fetchSignedUrlData = async () => {
       if (!token) return;
 
@@ -91,10 +116,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (newToken) {
       storeIdToken(newToken);
       setToken(newToken);
+      parseUserFromToken(newToken);
     } else {
-      localStorage.removeItem("token");
+      localStorage.removeItem("id_token");
       localStorage.removeItem("signedUrlData");
       setToken(null);
+      setUser(null);
       setSignedUrlData(null);
       redirectToLogin();
     }
@@ -105,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ token, setToken: handleSetToken, isAuthenticated, signedUrlData }}>
+    <AuthContext.Provider value={{ token, user, setToken: handleSetToken, isAuthenticated, signedUrlData }}>
       {children}
     </AuthContext.Provider>
   );

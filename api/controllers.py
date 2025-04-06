@@ -56,11 +56,13 @@ def create_user():
     # Create new user
     user_data = {
         "email": user_email,
+        "name": user_payload.get("name"),  # <-- added name
         "college": user_payload.get("college"),
         "department": user_payload.get("department"),
         "created_at": datetime.now(timezone.utc),
         "status": UserStatus.ACTIVE.value
     }
+
     result = users.insert_one(user_data)
     new_user = users.find_one({"_id": result.inserted_id})
     new_user["_id"] = str(new_user["_id"])
@@ -82,6 +84,8 @@ def update_user():
         in: body
         schema:
           properties:
+            name:
+              type: string
             college:
               type: string
             department:
@@ -107,21 +111,25 @@ def update_user():
     if not existing_user:
         return jsonify({"error": "User not found or unauthorized"}), 404
     
-    # Get the update data (college and department)
+    # Get the update data (name, college and department)
     data = request.json
+    name = data.get("name")
     college = data.get("college")
     department = data.get("department")
     
     # Validate the update fields (college and department)
-    if not college and not department:
-        return jsonify({"error": "At least one of 'college' or 'department' must be provided"}), 400
+    if not college and not department and not name:
+        return jsonify({"error": "At least one of 'college' or 'department' or 'name' must be provided"}), 400
     
     # Prepare the update data
     update_fields = {}
+    if name:
+        update_fields["name"] = name
     if college:
         update_fields["college"] = college
     if department:
         update_fields["department"] = department
+
     
     # Update the user in the database
     result = users.update_one(
