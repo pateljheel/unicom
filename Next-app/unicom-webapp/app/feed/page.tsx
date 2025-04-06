@@ -42,7 +42,7 @@ export default function MyPostsPage() {
 
   useEffect(() => {
     if (!signedUrlData) return; // 👈 WAIT for signedUrlData before trying to fetch posts
-  
+
     const fetchPosts = async () => {
       try {
         setLoading(true);
@@ -51,7 +51,7 @@ export default function MyPostsPage() {
           console.error("No ID token found");
           return;
         }
-  
+
         const response = await fetch(
           `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
           {
@@ -60,16 +60,16 @@ export default function MyPostsPage() {
             },
           }
         );
-  
+
         if (!response.ok) {
           console.error("Failed to fetch posts", response.status);
           return;
         }
-  
+
         const data = await response.json();
         let fetchedPosts = data.posts || [];
         setTotal(data.total || 0);
-  
+
         fetchedPosts = fetchedPosts.map((post: Post) => {
           if (post.image_url && post.image_url.length > 0 && signedUrlData) {
             const updatedUrls = post.image_url.map((url) => {
@@ -85,7 +85,7 @@ export default function MyPostsPage() {
           }
           return post;
         });
-  
+
         setPosts(fetchedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -93,10 +93,10 @@ export default function MyPostsPage() {
         setLoading(false);
       }
     };
-  
+
     fetchPosts();
   }, [page, limit, searchQuery, category, sortOrder, signedUrlData]); // ✅ include signedUrlData as dependency
-  
+
 
 
   const handleNext = () => {
@@ -210,8 +210,17 @@ export default function MyPostsPage() {
                   <p className="text-green-700 font-semibold">${post.price}</p>
                 )}
                 <p className="text-xs text-gray-400 mt-2">
-                  Posted by {post.owner}
+                  Posted by{" "}
+                  <a
+                    href={`https://contacts.google.com/${encodeURIComponent(post.owner)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    {post.owner}
+                  </a>
                 </p>
+
               </div>
             </div>
           ))}
@@ -284,8 +293,17 @@ export default function MyPostsPage() {
                 </p>
               )}
               <p className="text-gray-500 mt-2">
-                Posted by: {selectedPost.owner}
+                Posted by:{" "}
+                <a
+                  href={`https://contacts.google.com/${encodeURIComponent(selectedPost.owner)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  {selectedPost.owner}
+                </a>
               </p>
+
 
               {selectedPost.description && (
                 <div className="mt-6">
