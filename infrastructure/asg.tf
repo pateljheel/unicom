@@ -86,7 +86,7 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity          = 1
   vpc_zone_identifier       = local.asg_private_subnets
   health_check_type         = "ELB"
-  health_check_grace_period = 300
+  health_check_grace_period = 500
 
   dynamic "tag" {
     for_each = merge(
@@ -162,7 +162,7 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   description = "Allow HTTP from internal load balancer"
 }
 
-# # Allow SSH from everywhere
+# Allow SSH from everywhere
 resource "aws_security_group_rule" "allow_ssh" {
   type              = "ingress"
   protocol          = "tcp"
