@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState, useEffect  } from "react";
 import { useRouter } from "next/navigation";
 // Adjust these imports to match your shadcn UI setup
@@ -10,6 +11,8 @@ export default function ListingForm() {
   const router = useRouter();
   const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts";
 
+
+  // Log token on mount for debugging
   useEffect(() => {
     console.log("Token in localStorage:", localStorage.getItem("token"));
   }, []);
