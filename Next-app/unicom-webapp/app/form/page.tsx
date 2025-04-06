@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
+import { useState, useEffect  } from "react";
 import { useRouter } from "next/navigation";
 // Adjust these imports to match your shadcn UI setup
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ export default function ListingForm() {
   const [category, setCategory] = useState("");
   const router = useRouter();
   const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts";
+
 
   // Log token on mount for debugging
   useEffect(() => {
@@ -76,48 +78,38 @@ export default function ListingForm() {
       formData.images = images;
     }
 
-    // Print payload for debugging
-    console.log("Payload:", formData);
+    // Print the payload in the console
+  console.log("Payload:", formData);
 
-    try {
-      // Build headers; include Authorization header only if token exists.
-      const headers: HeadersInit = {
-        "Content-Type": "application/json"
-      };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      // Use relative URL so that the proxy handles the request.
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(formData),
-      });
-
-      // Check content type before parsing
-      const contentType = response.headers.get("Content-Type");
-      let result;
-      if (contentType && contentType.includes("application/json")) {
-        result = await response.json();
-      } else {
-        result = await response.text();
-        console.error("Expected JSON but received text:", result);
-      }
-
-      console.log("Response Status:", response.status);
-
-      if (response.status === 202) {
-        alert("Listing submitted successfully and is under moderation!");
-        router.push("/buttons");
-      } else {
-        alert("Error: " + (result.error || result || "Unknown error occurred"));
-      }
-    } catch (err) {
-      console.error("Submission error:", err);
-      alert("Something went wrong while submitting the post.");
+  try {
+    // Build headers; include Authorization only if token exists.
+    const headers: HeadersInit = {
+      "Content-Type": "application/json"
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
-  };
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+    console.log("Response Status:", response.status);
+
+    if (response.status === 202) {
+      alert("Listing submitted successfully and is under moderation!");
+      router.push("/buttons");
+    } else {
+      alert("Error: " + (result.error || "Unknown error occurred"));
+    }
+  } catch (err) {
+    console.error("Submission error:", err);
+    alert("Something went wrong while submitting the post.");
+  }
+};
 
   return (
     <Card className="max-w-md mx-auto mt-10">
