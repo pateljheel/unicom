@@ -23,6 +23,8 @@ export default function MyPostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null); // 👈 Modal control
   const [searchTerm, setSearchTerm] = useState(""); // what user types
   const [searchQuery, setSearchQuery] = useState(""); // confirmed search
+  const [category, setCategory] = useState(""); // empty means all
+  const [sortOrder, setSortOrder] = useState("desc"); // default to "Newest First"
 
 
   const CLOUDFRONT_HOST = "https://dpro9nxekr9pa.cloudfront.net/";
@@ -36,25 +38,26 @@ export default function MyPostsPage() {
           console.error("No ID token found");
           return;
         }
-  
+
         const response = await fetch(
-          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}`,
+          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`
+          ,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
             },
           }
         );
-  
+
         if (!response.ok) {
           console.error("Failed to fetch posts", response.status);
           return;
         }
-  
+
         const data = await response.json();
         let fetchedPosts = data.posts || [];
         setTotal(data.total || 0);
-  
+
         fetchedPosts = fetchedPosts.map((post: Post) => {
           if (post.image_url && post.image_url.length > 0) {
             const updatedUrls = post.image_url.map((url) => {
@@ -69,7 +72,7 @@ export default function MyPostsPage() {
           }
           return post;
         });
-  
+
         setPosts(fetchedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -77,10 +80,10 @@ export default function MyPostsPage() {
         setLoading(false);
       }
     };
-  
+
     fetchPosts();
-  }, [page, limit, searchQuery]); // ✅ Listen to searchQuery, NOT searchTerm
-  
+  }, [page, limit, searchQuery, category, sortOrder]);
+
 
   const handleNext = () => {
     if (page * limit < total) {
@@ -106,18 +109,6 @@ export default function MyPostsPage() {
 
   return (
     <div className="p-4 relative">
-      {/* Action Buttons */}
-      <div className="flex items-center space-x-4 p-4 bg-white mt-2 shadow-sm">
-        <button className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
-          Old Posts
-        </button>
-        <button className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
-          Recent
-        </button>
-        <button className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
-          Edit Post
-        </button>
-      </div>
 
       {/* My Feed Section */}
       <section className="max-w-6xl mx-auto p-4">
@@ -132,15 +123,48 @@ export default function MyPostsPage() {
             className="border p-2 rounded-l-md w-full max-w-md"
           />
           <button
-          onClick={() => {
-            setPage(1);
-            setSearchQuery(searchTerm); // ✅ Confirm searchTerm → searchQuery
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
-        >
-          Search
-        </button>
+            onClick={() => {
+              setPage(1);
+              setSearchQuery(searchTerm); // ✅ Confirm searchTerm → searchQuery
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
+          >
+            Search
+          </button>
         </div>
+
+        <div className="flex flex-wrap gap-4 mb-6">
+
+          {/* Category Filter */}
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1); // Reset to first page when changing filter
+            }}
+            className="border p-2 rounded-md"
+          >
+            <option value="">All Categories</option>
+            <option value="SELL">Sell</option>
+            <option value="ROOMMATE">Roommate</option>
+            <option value="CARPOOL">Carpool</option>
+          </select>
+
+          {/* Sort Order */}
+          <select
+            value={sortOrder}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              setPage(1); // Reset to first page when changing sort
+            }}
+            className="border p-2 rounded-md"
+          >
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {posts.map((post) => (
