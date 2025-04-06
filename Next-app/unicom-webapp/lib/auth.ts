@@ -15,24 +15,11 @@ export function logout(): void {
 /**
  * Extracts the ID token from the URL fragment (#).
  */
-// export function getIdTokenFromUrl(): string | null {
-//   const hash = window.location.hash.substring(1);
-//   const params = new URLSearchParams(hash);
-//   return params.get(TOKEN_STRING);
-// }
-
 export function getIdTokenFromUrl(): string | null {
-  // First, check the URL hash (after the "#")
   const hash = window.location.hash.substring(1);
-  let token = new URLSearchParams(hash).get(TOKEN_STRING);
-  
-  // If not found in hash, check the query parameters
-  if (!token) {
-    token = new URLSearchParams(window.location.search).get(TOKEN_STRING);
-  }
-  return token;
+  const params = new URLSearchParams(hash);
+  return params.get(TOKEN_STRING);
 }
-
 
 /**
  * Stores the given ID token in local storage.
@@ -48,7 +35,7 @@ export function storeIdToken(idToken: string): void {
 export function getStoredIdToken(): string | null {
   return localStorage.getItem(TOKEN_STRING);
 }
- 
+
 /**
  * Checks if the given token is expired.
  * @param token The JWT token to check.

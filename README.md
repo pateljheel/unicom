@@ -101,3 +101,10 @@ This is the source repository for application and infrastructure code.
 
 
 ## API Docs are available at the API endpoint `/apidocs`.
+
+
+## Points
+
+1. Use signed url instead of signed cookies. Remove bucket policy and OAC from distribution.
+2. Move hardcoded values out from all the pages.
+3. Use auth context for id_token and signedurl instead of local storage.

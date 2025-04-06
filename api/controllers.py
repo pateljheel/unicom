@@ -741,6 +741,46 @@ def get_signed_cookie():
         "expires": expires
     }), 200
 
+@routes.route('/api/signedurl', methods=['GET'])
+@jwt_required
+def get_signed_url():
+    """
+    Generate CloudFront signed URL components for post images (whole published folder).
+    ---
+    tags:
+      - Media
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Signed URL parameters returned
+    """
+    expires = int((datetime.now(timezone.utc) + timedelta(hours=24)).timestamp())
+
+    policy = f"""{{
+      "Statement": [
+        {{
+          "Resource": "{CLOUDFRONT_URL}published/*",
+          "Condition": {{
+            "DateLessThan": {{
+              "AWS:EpochTime": {expires}
+            }}
+          }}
+        }}
+      ]
+    }}"""
+
+    # Sign the policy
+    signature = rsa_signer(policy)
+
+    return jsonify({
+        "CloudFront-Policy": base64.b64encode(policy.encode('utf-8')).decode('utf-8'),
+        "CloudFront-Signature": signature,
+        "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
+        "expires": expires,
+    }), 200
+
+
 @routes.route('/api/users/me', methods=['DELETE'])
 @jwt_required
 def delete_current_user():

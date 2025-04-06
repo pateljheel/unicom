@@ -1,4 +1,4 @@
-"use client"; // Mark as client-side since it uses hooks and browser APIs
+"use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import {
@@ -11,76 +11,106 @@ import {
 
 // Define the shape of the context value
 interface AuthContextType {
-  token: string | null; // The current token, or null if not authenticated
-  setToken: (token: string | null) => void; // Allow manual token updates (e.g., for logout)
-  isAuthenticated: boolean; // Derived state for convenience
+  token: string | null;
+  setToken: (token: string | null) => void;
+  isAuthenticated: boolean;
+  signedUrlData: SignedUrlData | null;
 }
 
-// Create the context with an undefined default value
+// Shape of signed URL data
+interface SignedUrlData {
+  "CloudFront-Policy": string;
+  "CloudFront-Signature": string;
+  "CloudFront-Key-Pair-Id": string;
+  expires: number;
+}
+
+// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider component to wrap the app or specific sections
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Track initialization state
+  const [signedUrlData, setSignedUrlData] = useState<SignedUrlData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com";
 
   useEffect(() => {
-    // Function to initialize the token
-    const initializeToken = () => {
-      // Check URL for a token (e.g., after a redirect from login)
+    const initializeToken = async () => {
       const urlToken = getIdTokenFromUrl();
-      // Check localStorage for an existing token
       const storedToken = getStoredIdToken();
 
       if (urlToken) {
-        // If token is in URL, store it and use it
         storeIdToken(urlToken);
         setToken(urlToken);
-        // Clean the URL to remove the token from the query string
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       } else if (storedToken && !isTokenExpired(storedToken)) {
-        // If token is in storage and valid, use it
         setToken(storedToken);
       } else {
-        // No valid token found; redirect to login
         redirectToLogin();
       }
 
-      setIsLoading(false); // Mark initialization as complete
+      setIsLoading(false);
     };
 
     initializeToken();
-  }, []); // Empty dependency array: runs once on mount
+  }, []);
 
-  // Derived state for convenience
+  useEffect(() => {
+    // Fetch signed URL data once we have a valid token
+    const fetchSignedUrlData = async () => {
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/signedurl`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch signed URL");
+        }
+
+        const data = await response.json();
+        localStorage.setItem("signedUrlData", JSON.stringify(data));
+        setSignedUrlData(data);
+      } catch (error) {
+        console.error("Error fetching signed URL data:", error);
+      }
+    };
+
+    fetchSignedUrlData();
+  }, [token]);
+
   const isAuthenticated = !!token && !isTokenExpired(token);
 
-  // Handle token expiration or manual updates
   const handleSetToken = (newToken: string | null) => {
     if (newToken) {
       storeIdToken(newToken);
       setToken(newToken);
     } else {
-      localStorage.removeItem("token"); // Assuming "token" is the key
+      localStorage.removeItem("token");
+      localStorage.removeItem("signedUrlData");
       setToken(null);
+      setSignedUrlData(null);
       redirectToLogin();
     }
   };
 
-  // Show a loading state while token is being initialized
   if (isLoading) {
-    return <div>Loading authentication...</div>; // Or a spinner
+    return <div>Loading authentication...</div>;
   }
 
   return (
-    <AuthContext.Provider value={{ token, setToken: handleSetToken, isAuthenticated }}>
+    <AuthContext.Provider value={{ token, setToken: handleSetToken, isAuthenticated, signedUrlData }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to access the context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

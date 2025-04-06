@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import framer-motion
+import { useAuth } from "@/lib/AuthContext"; // Ensure this path is correct
 
 interface Post {
   _id: string;
@@ -26,10 +27,22 @@ export default function MyPostsPage() {
   const [category, setCategory] = useState(""); // empty means all
   const [sortOrder, setSortOrder] = useState("desc"); // default to "Newest First"
 
+  const { signedUrlData } = useAuth();
+
 
   const CLOUDFRONT_HOST = "https://dpro9nxekr9pa.cloudfront.net/";
 
+  function buildSignedImageUrl(baseImageUrl: string, signedUrlData: any): string {
+    const url = new URL(baseImageUrl);
+    url.searchParams.set("Policy", signedUrlData["CloudFront-Policy"]);
+    url.searchParams.set("Signature", signedUrlData["CloudFront-Signature"]);
+    url.searchParams.set("Key-Pair-Id", signedUrlData["CloudFront-Key-Pair-Id"]);
+    return url.toString();
+  }
+
   useEffect(() => {
+    if (!signedUrlData) return; // 👈 WAIT for signedUrlData before trying to fetch posts
+  
     const fetchPosts = async () => {
       try {
         setLoading(true);
@@ -38,32 +51,32 @@ export default function MyPostsPage() {
           console.error("No ID token found");
           return;
         }
-
+  
         const response = await fetch(
-          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`
-          ,
+          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
             },
           }
         );
-
+  
         if (!response.ok) {
           console.error("Failed to fetch posts", response.status);
           return;
         }
-
+  
         const data = await response.json();
         let fetchedPosts = data.posts || [];
         setTotal(data.total || 0);
-
+  
         fetchedPosts = fetchedPosts.map((post: Post) => {
-          if (post.image_url && post.image_url.length > 0) {
+          if (post.image_url && post.image_url.length > 0 && signedUrlData) {
             const updatedUrls = post.image_url.map((url) => {
               try {
                 const parsedUrl = new URL(url);
-                return CLOUDFRONT_HOST + parsedUrl.pathname.replace(/^\/+/, "");
+                const cloudfrontUrl = CLOUDFRONT_HOST + parsedUrl.pathname.replace(/^\/+/, "");
+                return buildSignedImageUrl(cloudfrontUrl, signedUrlData);
               } catch {
                 return url;
               }
@@ -72,7 +85,7 @@ export default function MyPostsPage() {
           }
           return post;
         });
-
+  
         setPosts(fetchedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -80,9 +93,10 @@ export default function MyPostsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchPosts();
-  }, [page, limit, searchQuery, category, sortOrder]);
+  }, [page, limit, searchQuery, category, sortOrder, signedUrlData]); // ✅ include signedUrlData as dependency
+  
 
 
   const handleNext = () => {
