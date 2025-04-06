@@ -9,7 +9,6 @@ import {
   redirectToLogin,
 } from "@/lib/auth";
 
-// Shape of signed URL data
 interface SignedUrlData {
   "CloudFront-Policy": string;
   "CloudFront-Signature": string;
@@ -17,14 +16,12 @@ interface SignedUrlData {
   expires: number;
 }
 
-// Shape of User object decoded from id_token
 interface User {
   email: string;
   sub: string;
-  [key: string]: any; // To allow other attributes like `name`, `phone_number`, etc.
+  [key: string]: any;
 }
 
-// Define the shape of the context value
 interface AuthContextType {
   token: string | null;
   user: User | null;
@@ -33,36 +30,42 @@ interface AuthContextType {
   signedUrlData: SignedUrlData | null;
 }
 
-// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [signedUrlData, setSignedUrlData] = useState<SignedUrlData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authStatus, setAuthStatus] = useState<"loading" | "authenticated" | "redirecting">("loading");
 
   const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com";
 
   useEffect(() => {
     const initializeToken = async () => {
+      console.log("Initializing authentication...");
       const urlToken = getIdTokenFromUrl();
       const storedToken = getStoredIdToken();
 
       if (urlToken) {
+        console.log("Found token in URL");
         storeIdToken(urlToken);
         setToken(urlToken);
         parseUserFromToken(urlToken);
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
+        setAuthStatus("authenticated");
       } else if (storedToken && !isTokenExpired(storedToken)) {
+        console.log("Found valid token in storage");
         setToken(storedToken);
         parseUserFromToken(storedToken);
+        setAuthStatus("authenticated");
       } else {
-        redirectToLogin();
+        console.log("No token found, redirecting to login");
+        setAuthStatus("redirecting");
+        setTimeout(() => {
+          redirectToLogin();
+        }, 1000); // 1 second delay just to show "Redirecting..." message
       }
-
-      setIsLoading(false);
     };
 
     initializeToken();
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         email: decodedPayload.email,
         sub: decodedPayload.sub,
-        ...decodedPayload, // Include all other attributes just in case
+        ...decodedPayload,
       });
     } catch (err) {
       console.error("Failed to decode token:", err);
@@ -107,7 +110,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    fetchSignedUrlData();
+    const createOrUpdateUser = async () => {
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create or update user");
+        }
+
+        console.log("User created or updated successfully");
+      } catch (error) {
+        console.error("Error creating/updating user:", error);
+      }
+    };
+
+    if (token) {
+      fetchSignedUrlData();
+      createOrUpdateUser();
+    }
   }, [token]);
 
   const isAuthenticated = !!token && !isTokenExpired(token);
@@ -127,8 +156,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  if (isLoading) {
+  // Handle different loading states nicely
+  if (authStatus === "loading") {
     return <div>Loading authentication...</div>;
+  }
+
+  if (authStatus === "redirecting") {
+    return <div>Redirecting to login...</div>;
   }
 
   return (

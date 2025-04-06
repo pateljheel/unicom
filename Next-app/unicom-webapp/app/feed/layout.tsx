@@ -24,9 +24,9 @@ export default function MyPostsLayout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main>{children}</main>
+      <main className="pb-24">{children}</main> {/* 👈 Add bottom padding here */}
 
-      {/* Footer with Create Post Button */}
+      {/* Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-inner flex justify-center">
         <button className="px-6 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600">
           Create Post

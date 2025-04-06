@@ -20,7 +20,7 @@ export default function MyPostsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(9);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null); // 👈 Modal control
   const [searchTerm, setSearchTerm] = useState(""); // what user types
   const [searchQuery, setSearchQuery] = useState(""); // confirmed search
