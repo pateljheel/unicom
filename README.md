@@ -61,7 +61,7 @@ This is the source repository for application and infrastructure code.
 
 ## Pre-requisites
 
-0. Developer machine must have admin access to the AWS project we AWS CLI configured.
+0. Developer machine must have admin access to the AWS project with AWS CLI configured.
 
 1. Create public private key pair in the `infrastructure/keys` directory. This is a unique key pair for the deployment. Use the same key pair for future terraform runs for the same deployment.
 
@@ -71,11 +71,11 @@ This is the source repository for application and infrastructure code.
     openssl rsa -pubout -in private_key.pem -out public_key.pem
     ```
 
-2. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrasture/backend` to match the created bucket.
+2. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrastructure/backend` to match the created bucket.
 
 ## Deploy/Update infrastructure and website
 
-1. Deploy or update (for first time run for the deployment) the infrastructure using terraform.
+1. Deploy or update (for subsequent runs of the deployment) the infrastructure using terraform.
 
     ```bash
     cd infrastructure
