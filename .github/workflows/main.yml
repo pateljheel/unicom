@@ -1,0 +1,117 @@
+name: Deploy Uni-Com
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform Action to Perform'
+        type: choice
+        options:
+        - Terraform_apply
+        - Terraform_destroy
+
+jobs:
+  deploy:
+    name: "Terraform_apply"
+    if: ${{ github.event.inputs.action == 'Terraform_apply' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 2. Configure AWS credentials
+      # TODO: May need to aws configure for default profile
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}  # or whatever region you use
+          profile: unifamily
+
+      # 3. Install Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.1.9  # Adjust as needed
+
+      # 4. Create key files from secrets (private_key.pem, public_key.pem)
+      # - name: Write key files
+      #   run: |
+      #     mkdir -p infrastructure/keys
+      #     echo "${{ secrets.PRIVATE_KEY_PEM }}" > infrastructure/keys/private_key.pem
+      #     echo "${{ secrets.PUBLIC_KEY_PEM }}" > infrastructure/keys/public_key.pem
+      #     chmod 600 infrastructure/keys/private_key.pem
+      #     chmod 600 infrastructure/keys/public_key.pem
+      - name: Create unique key pair for deployment
+        run: |
+          mkdir -p infrastructure/keys
+          openssl genrsa -out infrastructure/keys/private_key.pem 2048
+          openssl rsa -pubout -in infrastructure/keys/private_key.pem -out infrastructure/keys/public_key.pem
+          chmod 600 infrastructure/keys/private_key.pem
+          chmod 600 infrastructure/keys/public_key.pem
+
+      # 5. Terraform Init & Apply (to create/update the infrastructure)
+      - name: Terraform Init
+        working-directory: infrastructure
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infrastructure
+        run: terraform apply -auto-approve
+
+      # 6. Build the website front-end
+      - name: Build front-end
+        working-directory: Next-app\unicom-webapp
+        run: |
+          npm install
+          npm run build
+
+      # 7. Terraform Apply again (to upload site files to S3)
+      - name: Terraform Init (again)
+        working-directory: infrastructure
+        run: terraform init
+
+      - name: Terraform Apply (again)
+        working-directory: infrastructure
+        run: terraform apply -auto-approve
+
+  tear-down:
+    name: "Terraform_destroy"
+    if: ${{ github.event.inputs.action == 'Terraform_destroy' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 2. Configure AWS credentials
+      # TODO: May need to aws configure for default profile
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}  # or whatever region you use
+          profile: unifamily
+
+      # 3. Install Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.1.9  # Adjust as needed
+
+
+      # 5. Terraform Init & Apply (to create/update the infrastructure)
+      - name: Terraform Init
+        working-directory: infrastructure
+        run: terraform init
+
+      - name: Terraform Plan Destroy
+        run: terraform plan -destroy
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
