@@ -9,7 +9,7 @@ export default function MyPostsLayout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header / Navbar */}
-      <header className="flex items-center justify-between p-4 bg-white shadow-sm">
+      {/* <header className="flex items-center justify-between p-4 bg-white shadow-sm">
         <div className="flex items-center space-x-4">
           <h1 className="text-xl font-bold">Hi Bhavya 👋</h1>
         </div>
@@ -21,17 +21,17 @@ export default function MyPostsLayout({ children }: LayoutProps) {
             Logout
           </button>
         </div>
-      </header>
+      </header> */}
 
       {/* Main Content */}
       <main>{children}</main>
 
       {/* Footer with Create Post Button */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-inner flex justify-center">
+      {/* <footer className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-inner flex justify-center">
         <button className="px-6 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600">
           Create Post
         </button>
-      </footer>
+      </footer> */}
     </div>
   );
 }

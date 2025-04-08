@@ -1,17 +1,17 @@
-export const Footer = () => {
-    return (
-      <footer className="hidden lg:block h-20 w-full border-t-2 border-slate-200 p-2">
-        {/* Footer */}
-      </footer>
-    );
-  };
+"use client";
 
-// export function Footer() {
-//   return (
-//     <footer className="w-full bg-gray-200 shadow-inner">
-//       <div className="container mx-auto p-4 text-center">
-//         <p>© {new Date().getFullYear()} My Company. All rights reserved.</p>
-//       </div>
-//     </footer>
-//   );
-// }
+import Link from "next/link";
+
+export const Footer = () => {
+  return (
+    <footer className="fixed bottom-0 left-0 right-0 bg-white shadow-inner px-4 py-4">
+      <div className="w-full">
+        <Link href="/form">
+          <button className="w-full py-3 bg-black text-white text-base font-semibold rounded-md shadow-md hover:bg-orange-600 transition">
+            Create Post
+          </button>
+        </Link>
+      </div>
+    </footer>
+  );
+};

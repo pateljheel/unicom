@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [signedUrlData, setSignedUrlData] = useState<SignedUrlData | null>(null);
   const [authStatus, setAuthStatus] = useState<"loading" | "authenticated" | "redirecting">("loading");
 
-  const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com";
+  const API_URL = "https://nbdki69xm0.execute-api.us-east-1.amazonaws.com";
 
   useEffect(() => {
     const initializeToken = async () => {

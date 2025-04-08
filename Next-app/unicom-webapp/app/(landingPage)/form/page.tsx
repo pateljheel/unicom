@@ -558,7 +558,8 @@ export default function ListingForm() {
   const [customPreferences, setCustomPreferences] = useState<string[]>([]);
   const router = useRouter();
   const { token, isAuthenticated } = useAuth();
-  const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts";
+  const API_URL = "https://nbdki69xm0.execute-api.us-east-1.amazonaws.com/api/posts";
+  
 
   useEffect(() => {
     console.log("Token from context:", token);

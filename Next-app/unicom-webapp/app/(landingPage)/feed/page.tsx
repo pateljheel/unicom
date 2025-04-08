@@ -30,7 +30,7 @@ export default function MyPostsPage() {
   const [userInfoCache, setUserInfoCache] = useState<Record<string, any>>({}); // 👈 user info cache
 
   const { signedUrlData } = useAuth();
-  const CLOUDFRONT_HOST = "https://dpro9nxekr9pa.cloudfront.net/";
+  const CLOUDFRONT_HOST = "https://d2ogvrcs4mzuu5.cloudfront.net/";
 
   function buildSignedImageUrl(baseImageUrl: string, signedUrlData: any): string {
     const url = new URL(baseImageUrl);
@@ -51,7 +51,7 @@ export default function MyPostsPage() {
       }
 
       const response = await fetch(
-        `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/users/${encodeURIComponent(email)}`,
+        `https://nbdki69xm0.execute-api.us-east-1.amazonaws.com/api/users/${encodeURIComponent(email)}`,
         {
           headers: {
             Authorization: `Bearer ${idToken}`,
@@ -84,7 +84,7 @@ export default function MyPostsPage() {
         }
 
         const response = await fetch(
-          `https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
+          `https://nbdki69xm0.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,

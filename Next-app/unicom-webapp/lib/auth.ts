@@ -9,6 +9,7 @@ const TOKEN_STRING = 'id_token';
  */
 export function logout(): void {
   localStorage.removeItem(TOKEN_STRING);
+  localStorage.removeItem("signedUrlData");
   window.location.href = COGNITO_LOGOUT_URL;
 }
 

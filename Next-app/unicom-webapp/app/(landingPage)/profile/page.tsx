@@ -12,7 +12,7 @@ export default function MyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const API_URL = "https://8p4eqklq5b.execute-api.us-east-1.amazonaws.com";
+  const API_URL = "https://nbdki69xm0.execute-api.us-east-1.amazonaws.com";
 
   useEffect(() => {
     const fetchProfile = async () => {
