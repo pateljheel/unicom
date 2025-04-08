@@ -53,9 +53,17 @@ resource "aws_apigatewayv2_vpc_link" "alb_vpc_link" {
 
 }
 
+
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "${var.app_name}-${var.app_environment}-api"
   protocol_type = "HTTP"
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    allow_headers = ["*"]
+    expose_headers = ["*"]
+    max_age = 3600
+  }
 }
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -112,3 +120,8 @@ resource "aws_apigatewayv2_route" "apidocs_route" {
   target    = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
 }
 
+resource "aws_apigatewayv2_route" "proxy_route_cors" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "OPTIONS /api/{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
+}
