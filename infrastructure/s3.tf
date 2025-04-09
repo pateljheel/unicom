@@ -32,27 +32,6 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_policy" "public_policy" {
-  bucket = aws_s3_bucket.website_bucket.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action = [
-          "s3:GetObject"
-        ]
-        Resource = "${aws_s3_bucket.website_bucket.arn}/*"
-      }
-    ]
-  })
-
-  depends_on = [ aws_s3_bucket_public_access_block.public_access ]
-}
-
 resource "aws_s3_bucket" "images_bucket" {
   bucket        = "${var.images_bucket_name}-${var.app_environment}"
   force_destroy = true # Allows deletion of the bucket even if it contains objects
@@ -160,25 +139,35 @@ resource "aws_s3_bucket_policy" "website_bucket_cf_policy" {
   bucket = aws_s3_bucket.website_bucket.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipal",
-        Effect    = "Allow",
-        Principal = {
-          "Service" : "cloudfront.amazonaws.com"
-        },
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.website_bucket.arn}/*",
-        Condition = {
-          "StringEquals" = {
-            "AWS:SourceArn" = "${aws_cloudfront_distribution.s3_distribution.arn}"
-          }
-        }
-      }
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = ["s3:GetObject"]
+        Resource  = "${aws_s3_bucket.website_bucket.arn}/*"
+      },
+      # {
+      #   Sid       = "AllowCloudFrontServicePrincipal"
+      #   Effect    = "Allow"
+      #   Principal = {
+      #     Service = "cloudfront.amazonaws.com"
+      #   }
+      #   Action    = "s3:GetObject"
+      #   Resource  = "${aws_s3_bucket.website_bucket.arn}/*"
+      #   Condition = {
+      #     StringEquals = {
+      #       "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+      #     }
+      #   }
+      # }
     ]
   })
+
+  depends_on = [aws_cloudfront_distribution.s3_distribution]
 }
+
 
 
 resource "aws_s3_bucket_cors_configuration" "images_bucket_cors" {
