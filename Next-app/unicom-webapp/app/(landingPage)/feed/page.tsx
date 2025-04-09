@@ -1,5 +1,6 @@
 "use client";
 
+import infra_config from '../../../public/infra_config.json';
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
@@ -30,7 +31,8 @@ export default function MyPostsPage() {
   const [userInfoCache, setUserInfoCache] = useState<Record<string, any>>({}); // 👈 user info cache
 
   const { signedUrlData } = useAuth();
-  const CLOUDFRONT_HOST = "https://d2ogvrcs4mzuu5.cloudfront.net/";
+  const CLOUDFRONT_HOST = infra_config.cloudfront_url;
+  const API_URL = infra_config.api_url;
 
   function buildSignedImageUrl(baseImageUrl: string, signedUrlData: any): string {
     const url = new URL(baseImageUrl);
@@ -51,7 +53,7 @@ export default function MyPostsPage() {
       }
 
       const response = await fetch(
-        `https://nbdki69xm0.execute-api.us-east-1.amazonaws.com/api/users/${encodeURIComponent(email)}`,
+        `${API_URL}api/users/${encodeURIComponent(email)}`,
         {
           headers: {
             Authorization: `Bearer ${idToken}`,
@@ -84,7 +86,7 @@ export default function MyPostsPage() {
         }
 
         const response = await fetch(
-          `https://nbdki69xm0.execute-api.us-east-1.amazonaws.com/api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
+          `${API_URL}api/posts?page=${page}&limit=${limit}&search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(category)}&sort=${sortOrder}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
@@ -98,7 +100,7 @@ export default function MyPostsPage() {
         }
 
         const data = await response.json();
-        let fetchedPosts = data.posts || [];
+        let fetchedPosts = (data.posts as Post[]) || [];
         setTotal(data.total || 0);
 
         fetchedPosts = fetchedPosts.map((post: Post) => {

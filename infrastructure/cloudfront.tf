@@ -5,8 +5,13 @@ resource "aws_cloudfront_origin_access_control" "s3_oac" {
   signing_protocol                  = "sigv4"
 }
 
+resource "tls_private_key" "cloudfront_signing_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
 resource "aws_cloudfront_public_key" "signing_key" {
-  encoded_key = file("${var.s3_distribution_public_key}")
+  encoded_key = tls_private_key.cloudfront_signing_key.public_key_pem
   name        = "${var.app_name}-${var.app_environment}-s3-distribution-public-key"
 }
 
@@ -25,10 +30,25 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   origin {
-    domain_name = aws_s3_bucket.website_bucket.bucket_regional_domain_name
+    domain_name = aws_s3_bucket_website_configuration.website_config.website_endpoint
     origin_id   = var.s3_website_origin_id
     # Origin Access Control
-    origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
+    # origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
+
+    custom_origin_config {
+      http_port                = 80
+      https_port               = 443
+      origin_keepalive_timeout = 5
+      origin_protocol_policy   = "http-only"
+      origin_read_timeout      = 30
+      origin_ssl_protocols = [
+        "SSLv3",
+        "TLSv1",
+        "TLSv1.1",
+        "TLSv1.2",
+      ]
+    }
+
   }
 
   enabled             = true

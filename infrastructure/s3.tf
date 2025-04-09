@@ -23,35 +23,35 @@ resource "aws_s3_bucket_website_configuration" "website_config" {
   }
 }
 
-# resource "aws_s3_bucket_public_access_block" "public_access" {
-#   bucket = aws_s3_bucket.website_bucket.id
+resource "aws_s3_bucket_public_access_block" "public_access" {
+  bucket = aws_s3_bucket.website_bucket.id
 
-#   block_public_acls       = false
-#   block_public_policy     = false
-#   ignore_public_acls      = false
-#   restrict_public_buckets = false
-# }
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
 
-# resource "aws_s3_bucket_policy" "public_policy" {
-#   bucket = aws_s3_bucket.website_bucket.id
+resource "aws_s3_bucket_policy" "public_policy" {
+  bucket = aws_s3_bucket.website_bucket.id
 
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Sid       = "PublicReadGetObject"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action = [
-#           "s3:GetObject"
-#         ]
-#         Resource = "${aws_s3_bucket.website_bucket.arn}/*"
-#       }
-#     ]
-#   })
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "${aws_s3_bucket.website_bucket.arn}/*"
+      }
+    ]
+  })
 
-#   depends_on = [ aws_s3_bucket_public_access_block.public_access ]
-# }
+  depends_on = [ aws_s3_bucket_public_access_block.public_access ]
+}
 
 resource "aws_s3_bucket" "images_bucket" {
   bucket        = "${var.images_bucket_name}-${var.app_environment}"
@@ -161,19 +161,18 @@ resource "aws_s3_bucket_policy" "website_bucket_cf_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Id      = "AllowGetObjects"
     Statement = [
       {
-        "Sid" : "AllowCloudFrontServicePrincipalWebsite",
-        "Effect" : "Allow",
-        "Principal" : {
+        Sid       = "AllowCloudFrontServicePrincipal",
+        Effect    = "Allow",
+        Principal = {
           "Service" : "cloudfront.amazonaws.com"
         },
-        "Action" : "s3:GetObject",
-        "Resource" : "${aws_s3_bucket.website_bucket.arn}/**",
-        "Condition" : {
-          "StringEquals" : {
-            "AWS:SourceArn" : "${aws_cloudfront_distribution.s3_distribution.arn}"
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.website_bucket.arn}/*",
+        Condition = {
+          "StringEquals" = {
+            "AWS:SourceArn" = "${aws_cloudfront_distribution.s3_distribution.arn}"
           }
         }
       }

@@ -1,5 +1,6 @@
 "use client";
 
+import infra_config from '../../../public/infra_config.json';
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
@@ -12,7 +13,7 @@ export default function MyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const API_URL = "https://nbdki69xm0.execute-api.us-east-1.amazonaws.com";
+  const API_URL = infra_config.api_url;
 
   useEffect(() => {
     const fetchProfile = async () => {

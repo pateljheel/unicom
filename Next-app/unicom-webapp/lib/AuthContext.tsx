@@ -1,5 +1,6 @@
 "use client";
 
+import infra_config from '../public/infra_config.json';
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import {
   getIdTokenFromUrl,
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [signedUrlData, setSignedUrlData] = useState<SignedUrlData | null>(null);
   const [authStatus, setAuthStatus] = useState<"loading" | "authenticated" | "redirecting">("loading");
 
-  const API_URL = "https://nbdki69xm0.execute-api.us-east-1.amazonaws.com";
+  const API_URL = infra_config.api_url;
 
   useEffect(() => {
     const initializeToken = async () => {
