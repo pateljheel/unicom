@@ -44,7 +44,7 @@ export default function Home() {
         </h1>
         <div className="flex flex-col items-center gap-y-3 max-w-[330px] w-full">
           <Button size="lg" variant="secondary" className="w-full" asChild>
-            <Link href="/form">Welcome to UniCom!</Link>
+            <Link href="/feed">Welcome to UniCom!</Link>
           </Button>
         </div>
       </div>

@@ -6,4 +6,3 @@
     "cognito_logout_url": "https://unicom-stg-userpool.auth.us-east-1.amazoncognito.com/logout?client_id=73hfv1rb14tu3ja907n6q8s1fu&logout_uri=https://d2ssj051k9831r.cloudfront.net",
     "post_images_url": "https://d2ssj051k9831r.cloudfront.net/published/"
   }
-  
