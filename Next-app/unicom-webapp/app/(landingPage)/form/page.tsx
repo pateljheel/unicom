@@ -782,7 +782,7 @@ export default function ListingForm() {
 
       if (response.status === 202) {
         alert("Listing submitted successfully and is under moderation!");
-        router.push("/buttons");
+        router.push("/myposts");
       } else {
         alert("Error: " + (result.error || "Unknown error occurred"));
       }
