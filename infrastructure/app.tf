@@ -24,6 +24,7 @@ locals {
     cloudfront_url              = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cloudfront_key_pair_id      = aws_cloudfront_public_key.signing_key.id
     cloudfront_private_key_path = "/home/ec2-user/keys/private_key.pem"
+    openai_api_key              = var.openai_api_key
   })
 
   # Generate local development environment content
@@ -45,6 +46,7 @@ locals {
     cloudfront_url              = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cloudfront_key_pair_id      = aws_cloudfront_public_key.signing_key.id
     cloudfront_private_key_path = "../infrastructure/keys/private_key.pem"
+    openai_api_key              = var.openai_api_key
   })
 
   # MIME types mapping
@@ -88,19 +90,19 @@ resource "aws_s3_object" "app_files" {
 
 # Upload CloudFront signing private key
 resource "aws_s3_object" "private_key" {
-  bucket  = aws_s3_bucket.app_bucket.id
-  key     = "keys/private_key.pem"
-  content = tls_private_key.cloudfront_signing_key.private_key_pem
-  acl     = "private"
+  bucket       = aws_s3_bucket.app_bucket.id
+  key          = "keys/private_key.pem"
+  content      = tls_private_key.cloudfront_signing_key.private_key_pem
+  acl          = "private"
   content_type = "application/x-pem-file"
 }
 
 # Upload CloudFront signing public key
 resource "aws_s3_object" "public_key" {
-  bucket  = aws_s3_bucket.app_bucket.id
-  key     = "keys/public_key.pem"
-  content = tls_private_key.cloudfront_signing_key.public_key_pem
-  acl     = "private"
+  bucket       = aws_s3_bucket.app_bucket.id
+  key          = "keys/public_key.pem"
+  content      = tls_private_key.cloudfront_signing_key.public_key_pem
+  acl          = "private"
   content_type = "application/x-pem-file"
 }
 
@@ -113,7 +115,7 @@ resource "aws_s3_object" "website_files" {
   key = replace(
     tolist(local.build_dir_files)[count.index],
     "^\\.*/",
-    ""    # Remove leading ./ if any
+    "" # Remove leading ./ if any
   )
 
   source = "${path.module}/../Next-app/unicom-webapp/out/${tolist(local.build_dir_files)[count.index]}"

@@ -133,3 +133,9 @@ variable "s3_distribution_public_key" {
   type        = string
   default     = "keys/public_key.pem" # Update this path to your public key file
 }
+
+variable "openai_api_key" {
+  description = "OpenAI API key for the application"
+  type        = string
+  sensitive   = true
+}

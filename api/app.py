@@ -8,6 +8,7 @@ from flasgger import Swagger
 # Load environment variables
 load_dotenv()
 
+
 # Initialize Flask app
 app = Flask(__name__)
 swagger = Swagger(app)
@@ -25,7 +26,9 @@ if bool(os.getenv("MONGO_USE_TLS", 'false') != 'false'):
         tls=bool(os.getenv("MONGO_USE_TLS", False)),
         tlsCAFile=os.getenv("MONGO_CA_FILE"),
         connect=True,
-        retryWrites=False # Disable retryWrites for compatibility with DocumentDB
+        retryWrites=False, # Disable retryWrites for compatibility with DocumentDB
+        tlsAllowInvalidHostnames=bool(os.getenv("MONGO_TLS_ALLOW_INVALID_HOSTNAMES", True)),
+        directConnection=True
     )
 else:
     mongo_client = MongoClient(
@@ -54,18 +57,6 @@ mongo_db = mongo_client[os.getenv("MONGO_DB")]
 
 # Pass mongo_db to routes
 app.config["MONGO_DB"] = mongo_db
-# app.config['SWAGGER'] = {
-#     "title": "Post Platform API",
-#     "uiversion": 3,
-#     "securityDefinitions": {
-#         "Bearer": {
-#             "type": "apiKey",
-#             "name": "Authorization",
-#             "in": "header",
-#             "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
-#         }
-#     }
-# }
 
 # Register routes blueprint
 app.register_blueprint(routes)

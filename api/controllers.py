@@ -1,4 +1,5 @@
 import os
+from openai import OpenAI
 import base64
 from models import *
 from bson import ObjectId
@@ -16,6 +17,13 @@ routes = Blueprint('routes', __name__)
 CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")  # e.g. https://d111111abcdef8.cloudfront.net/
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
 PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH") 
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+USE_OPENAI_EMBEDDING = bool(OPENAI_API_KEY)
+if USE_OPENAI_EMBEDDING:
+    client = OpenAI()
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")  # Default to ada model
+OPENAI_EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", 1536))  # Default to 1536 if not set
 
 @routes.route('/api/users', methods=['POST'])
 @jwt_required
@@ -181,6 +189,13 @@ def get_user(email):
     
     return jsonify(user), 200
 
+def get_openai_embedding(text):
+    response = client.embeddings.create(
+        model=OPENAI_EMBEDDING_MODEL,
+        input=text
+    )
+    return response.data[0].embedding
+
 def async_moderate_post(post_id, post_data, images, posts):
     try:
         # Step 1: Validate number of images
@@ -228,6 +243,15 @@ def async_moderate_post(post_id, post_data, images, posts):
         update_data = {"status": PostStatus.PUBLISHED.value}
         if image_urls:
             update_data["image_url"] = image_urls  # Store multiple
+
+        try:
+            # Generate embedding and attach to the same document
+            embedding = get_openai_embedding(post_data["description"])
+            update_data["description_vector"] = embedding
+        except Exception as e:
+            print(f"Embedding generation failed: {e}")
+            posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+            return
 
         posts.update_one({"_id": post_id}, {"$set": update_data})
 
@@ -621,6 +645,107 @@ def get_my_posts():
         "total": total
     }), 200
 
+
+def ensure_description_vector_index():
+    collection = get_posts_collection()
+
+    existing_indexes = collection.index_information()
+    index_name = "description_vector_hnsw"
+
+    if index_name in existing_indexes:
+        print(f"Vector index '{index_name}' already exists.")
+        return
+
+    print(f"Creating vector index '{index_name}'...")
+
+    try:
+        collection.database.command({
+            "createIndexes": collection.name,
+            "indexes": [
+                {
+                    "name": index_name,
+                    "key": {"description_vector": "vector"},
+                    "vector": {
+                        "type": "hnsw",
+                        "similarity": "cosine",
+                        "dimensions": OPENAI_EMBEDDING_DIMENSIONS,
+                        "m": 16,
+                        "efConstruction": 200
+                    }
+                }
+            ]
+        })
+        print("Vector index created successfully.")
+    except Exception as e:
+        print("Failed to create vector index:", e)
+    
+@routes.route('/api/posts/semanticsearch', methods=['POST'])
+@jwt_required
+def semantic_search_posts():
+    """
+    Semantic search for posts using vector similarity.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            query:
+              type: string
+              description: The natural language query to search posts by meaning
+              example: "room near campus with parking"
+    responses:
+      200:
+        description: List of posts ranked by semantic relevance
+        schema:
+          type: object
+          properties:
+            posts:
+              type: array
+              items:
+                type: object
+      400:
+        description: Missing or invalid query string
+    """
+    ensure_description_vector_index()  # Ensure index exists before search
+    data = request.json
+    query = data.get("query", "").strip()
+
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+
+    query_embedding = get_openai_embedding(query)
+
+    posts = get_posts_collection()
+    results = posts.aggregate([
+        {
+            "$search": {
+                "index": "description_vector_hnsw",
+                "knnBeta": {
+                    "vector": query_embedding,
+                    "k": 10,
+                    "path": "description_vector"
+                }
+            }
+        },
+        {
+            "$match": {
+                "status": PostStatus.PUBLISHED.value
+            }
+        }
+    ])
+
+    response = []
+    for post in results:
+        post["_id"] = str(post["_id"])
+        response.append(post)
+
+    return jsonify(response), 200
 
 @routes.route('/api/posts', methods=['GET'])
 @jwt_required

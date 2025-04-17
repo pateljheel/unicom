@@ -109,3 +109,5 @@ This is the source repository for application and infrastructure code.
 2. Move hardcoded values out from all the pages.
 3. Use auth context for id_token and signedurl instead of local storage.
 4. Update CORS on the API gateway.
+
+ssh -i "swen614-ubuntu-ssh-key.pem" -L 27017:unicom-stg-db-cluster.cluster-ctq0o6uy8zy0.us-east-1.docdb.amazonaws.com:27017 ec2-user@3.81.48.8 -N
