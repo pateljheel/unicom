@@ -1,7 +1,6 @@
 import os
 from openai import OpenAI
 import base64
-import numpy as np
 from models import *
 from typing import List
 from bson import ObjectId

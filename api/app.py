@@ -91,4 +91,4 @@ ensure_description_vector_index()
 app.register_blueprint(routes)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=os.getenv("FLASK_PORT", 5000), host='0.0.0.0')  # Use the port from environment variable or default to 5000
+    app.run(debug=True, port=os.getenv("FLASK_PORT", 8080), host='0.0.0.0')  # Use the port from environment variable or default to 5000

@@ -7,6 +7,7 @@ locals {
 
   # Generate production environment content
   env_content = templatefile("${path.module}/../api/env.tpl", {
+    aws_region                  = var.app_region
     flask_port                  = 8080
     mongo_host                  = aws_docdb_cluster.db_cluster.endpoint
     mongo_port                  = 27017
@@ -29,6 +30,7 @@ locals {
 
   # Generate local development environment content
   local_env_content = templatefile("${path.module}/../api/env.tpl", {
+    aws_region                  = var.app_region
     flask_port                  = 8080
     mongo_host                  = "localhost"
     mongo_port                  = 27017

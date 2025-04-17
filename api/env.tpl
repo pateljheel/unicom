@@ -1,3 +1,5 @@
+AWS_DEFAULT_REGION=${aws_region}
+AWS_REGION=${aws_region}
 FLASK_PORT=${flask_port}
 MONGO_HOST=${mongo_host}
 MONGO_PORT=${mongo_port}
