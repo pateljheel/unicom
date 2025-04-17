@@ -34,8 +34,8 @@ locals {
     mongo_port                  = 27017
     mongo_db                    = "unicom"
     mongo_username              = "unicom"
-    mongo_password              = "unicom"
-    use_tls                     = false
+    mongo_password              = var.db_password
+    use_tls                     = true
     mongo_ca_file               = "global-bundle.pem"
     mongo_min_pool_size         = 5
     mongo_max_pool_size         = 50
@@ -45,7 +45,7 @@ locals {
     s3_bucket_name              = aws_s3_bucket.images_bucket.bucket
     cloudfront_url              = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cloudfront_key_pair_id      = aws_cloudfront_public_key.signing_key.id
-    cloudfront_private_key_path = "../infrastructure/keys/private_key.pem"
+    cloudfront_private_key_path = "private_key.pem"
     openai_api_key              = var.openai_api_key
   })
 

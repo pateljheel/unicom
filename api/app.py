@@ -8,6 +8,7 @@ from flasgger import Swagger
 # Load environment variables
 load_dotenv()
 
+OPENAI_EMBEDDING_DIMENSIONS = int(os.getenv("OPENAI_EMBEDDING_DIMENSIONS", 1536))  # Default to 1536 if not set
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -58,6 +59,34 @@ mongo_db = mongo_client[os.getenv("MONGO_DB")]
 # Pass mongo_db to routes
 app.config["MONGO_DB"] = mongo_db
 
+def ensure_description_vector_index():
+    collection = app.config["MONGO_DB"]["posts"]
+
+    existing_indexes = collection.index_information()
+    index_name = "description_vector_hnsw"
+
+    if index_name in existing_indexes:
+        print(f"Vector index '{index_name}' already exists.")
+        return
+        # collection.drop_index(index_name)
+        # print(f"Dropped existing vector index '{index_name}'.")
+
+    print(f"Creating vector index '{index_name}'...")
+
+    try:
+        collection.create_index ([("description_vector","vector")], 
+            vectorOptions= {
+                "type": "hnsw", #You can choose HNSW index as well. With HNSW, you will have to remove "lists" parameter and use "m" and "efConstruction".
+                "similarity": "cosine",
+                "dimensions": OPENAI_EMBEDDING_DIMENSIONS,
+                "m": 16,
+                "efConstruction": 200},
+            name="description_vector_hnsw")
+        print("Vector index created successfully.")
+    except Exception as e:
+        print("Failed to create vector index:", e)
+
+ensure_description_vector_index()
 # Register routes blueprint
 app.register_blueprint(routes)
 
