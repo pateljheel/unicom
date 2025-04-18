@@ -14,7 +14,20 @@ interface Post {
   category: string;
   owner: string;
   description?: string;
-  status: string; // Added status to track PUBLISHED, CLOSED, etc.
+  status: string;
+  // Roommate-specific fields
+  community?: string;
+  rent?: number;
+  start_date?: string;
+  gender_preference?: string;
+  // Carpool-specific fields
+  from_location?: string;
+  to_location?: string;
+  departure_time?: string;
+  seats_available?: number;
+  // Sell-specific fields
+  item?: string;
+  sub_category?: string;
 }
 
 export default function MyPostsPage() {
@@ -149,7 +162,6 @@ export default function MyPostsPage() {
         return;
       }
 
-      // Refresh posts after deletion
       setPosts(posts.filter((post) => post._id !== postId));
       setTotal((prev) => prev - 1);
     } catch (error) {
@@ -179,7 +191,6 @@ export default function MyPostsPage() {
         return;
       }
 
-      // Update the post status locally
       setPosts(
         posts.map((post) =>
           post._id === postId ? { ...post, status: newStatus } : post
@@ -302,11 +313,58 @@ export default function MyPostsPage() {
                   <h3 className="text-lg font-bold">{post.title}</h3>
                   <p className="text-sm text-gray-500 mb-1">{post.category}</p>
                   <p className="text-sm text-gray-500 mb-1">Status: {post.status}</p>
-                  {post.location && (
-                    <p className="text-gray-700">{post.location}</p>
+
+                  {/* Category-specific details */}
+                  {post.category === "SELL" && (
+                    <>
+                      {post.item && <p className="text-gray-700">Item: {post.item}</p>}
+                      {post.price !== undefined && (
+                        <p className="text-green-700 font-semibold">${post.price}</p>
+                      )}
+                      {post.sub_category && (
+                        <p className="text-gray-700">Subcategory: {post.sub_category}</p>
+                      )}
+                    </>
                   )}
-                  {post.price !== undefined && (
-                    <p className="text-green-700 font-semibold">${post.price}</p>
+                  {post.category === "ROOMMATE" && (
+                    <>
+                      {post.community && (
+                        <p className="text-gray-700">Community: {post.community}</p>
+                      )}
+                      {post.rent !== undefined && (
+                        <p className="text-green-700 font-semibold">Rent: ${post.rent}</p>
+                      )}
+                      {post.start_date && (
+                        <p className="text-gray-700">
+                          Start Date: {new Date(post.start_date).toLocaleDateString()}
+                        </p>
+                      )}
+                      {post.gender_preference && (
+                        <p className="text-gray-700">
+                          Gender Preference: {post.gender_preference}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {post.category === "CARPOOL" && (
+                    <>
+                      {post.from_location && (
+                        <p className="text-gray-700">From: {post.from_location}</p>
+                      )}
+                      {post.to_location && (
+                        <p className="text-gray-700">To: {post.to_location}</p>
+                      )}
+                      {post.departure_time && (
+                        <p className="text-gray-700">
+                          Departure: {new Date(post.departure_time).toLocaleString()}
+                        </p>
+                      )}
+                      {post.seats_available !== undefined && (
+                        <p className="text-gray-700">
+                          Seats Available: {post.seats_available}
+                        </p>
+                      )}
+                    </>
                   )}
 
                   <p className="text-xs text-gray-400 mt-2">
@@ -337,22 +395,13 @@ export default function MyPostsPage() {
                         Close
                       </button>
                     )}
-                    {post.status === "PUBLISHED" ? (
+                    {post.status === "CLOSED" && (
                       <button
-                        onClick={() => handleUpdatePostStatus(post._id, "CLOSED")}
-                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        onClick={() => handleUpdatePostStatus(post._id, "PUBLISHED")}
+                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                       >
-                        Unpublish
+                        Publish
                       </button>
-                    ) : (
-                      post.status === "CLOSED" && (
-                        <button
-                          onClick={() => handleUpdatePostStatus(post._id, "PUBLISHED")}
-                          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                        >
-                          Publish
-                        </button>
-                      )
                     )}
                     <button
                       onClick={() => handleDeletePost(post._id)}
@@ -424,16 +473,65 @@ export default function MyPostsPage() {
                 </div>
               )}
 
-              {selectedPost.location && (
-                <p className="mt-4 text-gray-700">
-                  <strong>Location:</strong> {selectedPost.location}
-                </p>
+              {/* Category-specific details */}
+              {selectedPost.category === "SELL" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.item && <p><strong>Item:</strong> {selectedPost.item}</p>}
+                  {selectedPost.price !== undefined && (
+                    <p className="text-green-700 font-semibold">
+                      <strong>Price:</strong> ${selectedPost.price}
+                    </p>
+                  )}
+                  {selectedPost.sub_category && (
+                    <p><strong>Subcategory:</strong> {selectedPost.sub_category}</p>
+                  )}
+                </div>
               )}
-              {selectedPost.price !== undefined && (
-                <p className="text-green-700 font-semibold">
-                  Price: ${selectedPost.price}
-                </p>
+              {selectedPost.category === "ROOMMATE" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.community && (
+                    <p><strong>Community:</strong> {selectedPost.community}</p>
+                  )}
+                  {selectedPost.rent !== undefined && (
+                    <p className="text-green-700 font-semibold">
+                      <strong>Rent:</strong> ${selectedPost.rent}
+                    </p>
+                  )}
+                  {selectedPost.start_date && (
+                    <p>
+                      <strong>Start Date:</strong>{" "}
+                      {new Date(selectedPost.start_date).toLocaleDateString()}
+                    </p>
+                  )}
+                  {selectedPost.gender_preference && (
+                    <p>
+                      <strong>Gender Preference:</strong> {selectedPost.gender_preference}
+                    </p>
+                  )}
+                </div>
               )}
+              {selectedPost.category === "CARPOOL" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.from_location && (
+                    <p><strong>From:</strong> {selectedPost.from_location}</p>
+                  )}
+                  {selectedPost.to_location && (
+                    <p><strong>To:</strong> {selectedPost.to_location}</p>
+                  )}
+                  {selectedPost.departure_time && (
+                    <p>
+                      <strong>Departure:</strong>{" "}
+                      {new Date(selectedPost.departure_time).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedPost.seats_available !== undefined && (
+                    <p>
+                      <strong>Seats Available:</strong> {selectedPost.seats_available}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <p className="text-gray-500 mt-2">
                 Posted by:{" "}
                 <a
@@ -469,22 +567,13 @@ export default function MyPostsPage() {
                     Close
                   </button>
                 )}
-                {selectedPost.status === "PUBLISHED" ? (
+                {selectedPost.status === "CLOSED" && (
                   <button
-                    onClick={() => handleUpdatePostStatus(selectedPost._id, "CLOSED")}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                    onClick={() => handleUpdatePostStatus(selectedPost._id, "PUBLISHED")}
+                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                   >
-                    Unpublish
+                    Publish
                   </button>
-                ) : (
-                  selectedPost.status === "CLOSED" && (
-                    <button
-                      onClick={() => handleUpdatePostStatus(selectedPost._id, "PUBLISHED")}
-                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      Publish
-                    </button>
-                  )
                 )}
                 <button
                   onClick={() => handleDeletePost(selectedPost._id)}
