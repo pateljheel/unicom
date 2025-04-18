@@ -14,9 +14,23 @@ interface Post {
   category: string;
   owner: string;
   description?: string;
+  // Roommate-specific fields
+  community?: string;
+  rent?: number;
+  start_date?: string;
+  gender_preference?: string;
+  preferences?: string[]; // Added preferences field as an array of strings
+  // Carpool-specific fields
+  from_location?: string;
+  to_location?: string;
+  departure_time?: string;
+  seats_available?: number;
+  // Sell-specific fields
+  item?: string;
+  sub_category?: string;
 }
 
-export default function MyPostsPage() {
+export default function MyFeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -47,7 +61,7 @@ export default function MyPostsPage() {
   }
 
   const fetchUserInfo = async (email: string) => {
-    if (userInfoCache[email]) return; // already fetched
+    if (userInfoCache[email]) return;
 
     try {
       const idToken = localStorage.getItem("id_token");
@@ -77,7 +91,6 @@ export default function MyPostsPage() {
     }
   };
 
-  // Function to handle semantic search
   const handleSemanticSearch = async () => {
     if (!semanticSearchTerm.trim()) return;
     
@@ -111,7 +124,6 @@ export default function MyPostsPage() {
       const data = await response.json();
       let fetchedPosts = data || [];
 
-      // Process images for each post
       fetchedPosts = fetchedPosts.map((post: Post) => {
         if (post.image_url && post.image_url.length > 0 && signedUrlData) {
           const updatedUrls = post.image_url.map((url) => {
@@ -131,7 +143,6 @@ export default function MyPostsPage() {
       setSearchResults(fetchedPosts);
       setIsSemanticSearch(true);
 
-      // Fetch user details for owners
       const uniqueOwners = Array.from(new Set(fetchedPosts.map((post) => post.owner)));
       uniqueOwners.forEach((ownerEmail) => {
         fetchUserInfo(ownerEmail);
@@ -148,7 +159,7 @@ export default function MyPostsPage() {
     if (!signedUrlData) return;
 
     const fetchPosts = async () => {
-      if (isSemanticSearch) return; // Skip regular fetch if semantic search is active
+      if (isSemanticSearch) return;
       
       try {
         setLoading(true);
@@ -194,7 +205,6 @@ export default function MyPostsPage() {
 
         setPosts(fetchedPosts);
 
-        // fetch user details for owners
         const uniqueOwners = Array.from(new Set(fetchedPosts.map((post) => post.owner)));
         uniqueOwners.forEach((ownerEmail) => {
           fetchUserInfo(ownerEmail);
@@ -242,11 +252,9 @@ export default function MyPostsPage() {
 
   return (
     <div className="p-4 relative">
-      {/* My Feed Section */}
       <section className="max-w-6xl mx-auto p-4">
         <h2 className="text-2xl font-semibold mb-4">My Feed</h2>
 
-        {/* Toggle between regular and semantic search */}
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setIsSemanticSearch(false)}
@@ -384,11 +392,72 @@ export default function MyPostsPage() {
                 <div className="p-4">
                   <h3 className="text-lg font-bold">{post.title}</h3>
                   <p className="text-sm text-gray-500 mb-1">{post.category}</p>
-                  {post.location && (
-                    <p className="text-gray-700">{post.location}</p>
+
+                  {post.category === "SELL" && (
+                    <>
+                      {post.item && <p className="text-gray-700">Item: {post.item}</p>}
+                      {post.price !== undefined && (
+                        <p className="text-green-700 font-semibold">${post.price}</p>
+                      )}
+                      {post.sub_category && (
+                        <p className="text-gray-700">Subcategory: {post.sub_category}</p>
+                      )}
+                      {post.location && (
+                        <p className="text-gray-700">Location: {post.location}</p>
+                      )}
+                    </>
                   )}
-                  {post.price !== undefined && (
-                    <p className="text-green-700 font-semibold">${post.price}</p>
+                  {post.category === "ROOMMATE" && (
+                    <>
+                      {post.community && (
+                        <p className="text-gray-700">Community: {post.community}</p>
+                      )}
+                      {post.rent !== undefined && (
+                        <p className="text-green-700 font-semibold">Rent: ${post.rent}</p>
+                      )}
+                      {post.start_date && (
+                        <p className="text-gray-700">
+                          Start Date: {new Date(post.start_date).toLocaleDateString()}
+                        </p>
+                      )}
+                      {post.gender_preference && (
+                        <p className="text-gray-700">
+                          Gender Preference: {post.gender_preference}
+                        </p>
+                      )}
+                      {post.preferences && post.preferences.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {post.preferences.map((pref, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded-full"
+                            >
+                              {pref}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {post.category === "CARPOOL" && (
+                    <>
+                      {post.from_location && (
+                        <p className="text-gray-700">From: {post.from_location}</p>
+                      )}
+                      {post.to_location && (
+                        <p className="text-gray-700">To: {post.to_location}</p>
+                      )}
+                      {post.departure_time && (
+                        <p className="text-gray-700">
+                          Departure: {new Date(post.departure_time).toLocaleString()}
+                        </p>
+                      )}
+                      {post.seats_available !== undefined && (
+                        <p className="text-gray-700">
+                          Seats Available: {post.seats_available}
+                        </p>
+                      )}
+                    </>
                   )}
 
                   <p className="text-xs text-gray-400 mt-2">
@@ -414,7 +483,6 @@ export default function MyPostsPage() {
           })}
         </div>
 
-        {/* Pagination Controls - only show for regular search */}
         {!isSemanticSearch && (
           <div className="flex justify-between items-center mt-8">
             <button
@@ -438,7 +506,6 @@ export default function MyPostsPage() {
         )}
       </section>
 
-      {/* Modal Popup */}
       <AnimatePresence>
         {selectedPost && (
           <motion.div
@@ -472,16 +539,82 @@ export default function MyPostsPage() {
                 </div>
               )}
 
-              {selectedPost.location && (
-                <p className="mt-4 text-gray-700">
-                  <strong>Location:</strong> {selectedPost.location}
-                </p>
+              {selectedPost.category === "SELL" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.item && <p><strong>Item:</strong> {selectedPost.item}</p>}
+                  {selectedPost.price !== undefined && (
+                    <p className="text-green-700 font-semibold">
+                      <strong>Price:</strong> ${selectedPost.price}
+                    </p>
+                  )}
+                  {selectedPost.sub_category && (
+                    <p><strong>Subcategory:</strong> {selectedPost.sub_category}</p>
+                  )}
+                  {selectedPost.location && (
+                    <p><strong>Location:</strong> {selectedPost.location}</p>
+                  )}
+                </div>
               )}
-              {selectedPost.price !== undefined && (
-                <p className="text-green-700 font-semibold">
-                  Price: ${selectedPost.price}
-                </p>
+              {selectedPost.category === "ROOMMATE" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.community && (
+                    <p><strong>Community:</strong> {selectedPost.community}</p>
+                  )}
+                  {selectedPost.rent !== undefined && (
+                    <p className="text-green-700 font-semibold">
+                      <strong>Rent:</strong> ${selectedPost.rent}
+                    </p>
+                  )}
+                  {selectedPost.start_date && (
+                    <p>
+                      <strong>Start Date:</strong>{" "}
+                      {new Date(selectedPost.start_date).toLocaleDateString()}
+                    </p>
+                  )}
+                  {selectedPost.gender_preference && (
+                    <p>
+                      <strong>Gender Preference:</strong> {selectedPost.gender_preference}
+                    </p>
+                  )}
+                  {selectedPost.preferences && selectedPost.preferences.length > 0 && (
+                    <div className="mt-2">
+                      <p><strong>Preferences:</strong></p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedPost.preferences.map((pref, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded-full"
+                          >
+                            {pref}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
+              {selectedPost.category === "CARPOOL" && (
+                <div className="mt-4 text-gray-700 space-y-1">
+                  {selectedPost.from_location && (
+                    <p><strong>From:</strong> {selectedPost.from_location}</p>
+                  )}
+                  {selectedPost.to_location && (
+                    <p><strong>To:</strong> {selectedPost.to_location}</p>
+                  )}
+                  {selectedPost.departure_time && (
+                    <p>
+                      <strong>Departure:</strong>{" "}
+                      {new Date(selectedPost.departure_time).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedPost.seats_available !== undefined && (
+                    <p>
+                      <strong>Seats Available:</strong> {selectedPost.seats_available}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <p className="text-gray-500 mt-2">
                 Posted by:{" "}
                 <a
@@ -492,7 +625,6 @@ export default function MyPostsPage() {
                 </a>
               </p>
 
-              {/* User Info inside Modal */}
               {userInfoCache[selectedPost.owner] && (
                 <div className="mt-4 text-gray-600 space-y-1">
                   <div><strong>Name:</strong> {userInfoCache[selectedPost.owner].name || "N/A"}</div>
