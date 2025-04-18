@@ -1,6 +1,8 @@
 import os
+from openai import OpenAI
 import base64
 from models import *
+from typing import List
 from bson import ObjectId
 from threading import Thread
 from middlewares import jwt_required
@@ -11,13 +13,27 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 
-routes = Blueprint('routes', __name__)
+routes = Blueprint("routes", __name__)
 
-CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")  # e.g. https://d111111abcdef8.cloudfront.net/
+CLOUDFRONT_URL = os.getenv(
+    "CLOUDFRONT_URL"
+)  # e.g. https://d111111abcdef8.cloudfront.net/
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
-PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH") 
+PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH")
 
-@routes.route('/api/users', methods=['POST'])
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+USE_OPENAI_EMBEDDING = bool(OPENAI_API_KEY)
+if USE_OPENAI_EMBEDDING:
+    client = OpenAI()
+OPENAI_EMBEDDING_MODEL = os.getenv(
+    "OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"
+)  # Default to ada model
+OPENAI_EMBEDDING_DIMENSIONS = int(
+    os.getenv("EMBEDDING_DIMENSIONS", 1536)
+)  # Default to 1536 if not set
+
+
+@routes.route("/api/users", methods=["POST"])
 @jwt_required
 def create_user():
     """
@@ -46,7 +62,7 @@ def create_user():
         if existing_user.get("status") == UserStatus.DELETED.value:
             users.update_one(
                 {"_id": existing_user["_id"]},
-                {"$set": {"status": UserStatus.ACTIVE.value}}
+                {"$set": {"status": UserStatus.ACTIVE.value}},
             )
             existing_user["status"] = UserStatus.ACTIVE.value
 
@@ -60,7 +76,7 @@ def create_user():
         "college": user_payload.get("college"),
         "department": user_payload.get("department"),
         "created_at": datetime.now(timezone.utc),
-        "status": UserStatus.ACTIVE.value
+        "status": UserStatus.ACTIVE.value,
     }
 
     result = users.insert_one(user_data)
@@ -69,7 +85,8 @@ def create_user():
 
     return jsonify(new_user), 200
 
-@routes.route('/api/users', methods=['PATCH'])
+
+@routes.route("/api/users", methods=["PATCH"])
 @jwt_required
 def update_user():
     """
@@ -99,28 +116,35 @@ def update_user():
         description: User not found
     """
     users = get_users_collection()
-    
+
     # Check if the user exists (by the email in the token)
     user_payload = request.user_payload
     user_email = user_payload.get("email")
     if not user_email:
         return jsonify({"error": "User email not found in token"}), 400
-    
+
     # Fetch the existing user from MongoDB
     existing_user = users.find_one({"email": user_email})
     if not existing_user:
         return jsonify({"error": "User not found or unauthorized"}), 404
-    
+
     # Get the update data (name, college and department)
     data = request.json
     name = data.get("name")
     college = data.get("college")
     department = data.get("department")
-    
+
     # Validate the update fields (college and department)
     if not college and not department and not name:
-        return jsonify({"error": "At least one of 'college' or 'department' or 'name' must be provided"}), 400
-    
+        return (
+            jsonify(
+                {
+                    "error": "At least one of 'college' or 'department' or 'name' must be provided"
+                }
+            ),
+            400,
+        )
+
     # Prepare the update data
     update_fields = {}
     if name:
@@ -130,24 +154,26 @@ def update_user():
     if department:
         update_fields["department"] = department
 
-    
     # Update the user in the database
     result = users.update_one(
         {"_id": existing_user["_id"], "email": user_email},  # Find by ID and email
-        {"$set": update_fields}  # Update the specified fields
+        {"$set": update_fields},  # Update the specified fields
     )
-    
+
     if result.modified_count == 0:
         return jsonify({"error": "No changes were made"}), 400
-    
+
     # Fetch the updated user
     updated_user = users.find_one({"_id": existing_user["_id"], "email": user_email})
-    updated_user["_id"] = str(updated_user["_id"])  # Convert the ObjectId to string for the response
-    
+    updated_user["_id"] = str(
+        updated_user["_id"]
+    )  # Convert the ObjectId to string for the response
+
     # Return the updated user
     return jsonify(updated_user), 200
 
-@routes.route('/api/users/<string:email>', methods=['GET'])
+
+@routes.route("/api/users/<string:email>", methods=["GET"])
 @jwt_required
 def get_user(email):
     """
@@ -169,23 +195,31 @@ def get_user(email):
         description: User not found
     """
     users = get_users_collection()
-    
+
     # Check if the user exists by email
     user = users.find_one({"email": email})
-    
+
     if not user:
         return jsonify({"error": "User not found"}), 404
-    
+
     # Convert ObjectId to string for the response
     user["_id"] = str(user["_id"])
-    
+
     return jsonify(user), 200
+
+
+def get_openai_embedding(text: str) -> List[float]:
+    response = client.embeddings.create(model=OPENAI_EMBEDDING_MODEL, input=text)
+    return response.data[0].embedding
+
 
 def async_moderate_post(post_id, post_data, images, posts):
     try:
         # Step 1: Validate number of images
         if images and len(images) > 5:
-            posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+            posts.update_one(
+                {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+            )
             return
 
         image_bytes_list = []
@@ -197,12 +231,16 @@ def async_moderate_post(post_id, post_data, images, posts):
                     image_bytes = base64.b64decode(image_data)
                 except Exception as e:
                     print(f"Base64 decoding failed for image {i+1}: {e}")
-                    posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                    posts.update_one(
+                        {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+                    )
                     return
 
                 if not process_image(image_bytes):
                     print(f"Image {i+1} failed moderation")
-                    posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                    posts.update_one(
+                        {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+                    )
                     return
 
                 image_bytes_list.append(image_bytes)  # Store for later S3 upload
@@ -210,7 +248,9 @@ def async_moderate_post(post_id, post_data, images, posts):
         # Step 3: Moderate the text
         if not process_text(post_data["description"]):
             print("Text moderation failed")
-            posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+            posts.update_one(
+                {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+            )
             return
 
         # Step 4: Store images in S3 *only after* all moderation passes
@@ -220,7 +260,9 @@ def async_moderate_post(post_id, post_data, images, posts):
             image_url = store_image_in_s3(image_bytes, image_name)
             if not image_url:
                 print(f"Image {i+1} failed to upload to S3")
-                posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+                posts.update_one(
+                    {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+                )
                 return
             image_urls.append(image_url)
 
@@ -229,14 +271,27 @@ def async_moderate_post(post_id, post_data, images, posts):
         if image_urls:
             update_data["image_url"] = image_urls  # Store multiple
 
+        try:
+            # Generate embedding and attach to the same document
+            embedding = get_openai_embedding(post_data["description"])
+            update_data["description_vector"] = embedding
+        except Exception as e:
+            print(f"Embedding generation failed: {e}")
+            posts.update_one(
+                {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+            )
+            return
+
         posts.update_one({"_id": post_id}, {"$set": update_data})
 
     except Exception as e:
         print(f"Moderation error: {e}")
-        posts.update_one({"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}})
+        posts.update_one(
+            {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
+        )
 
 
-@routes.route('/api/posts', methods=['POST'])
+@routes.route("/api/posts", methods=["POST"])
 @jwt_required
 def create_post():
     """
@@ -272,10 +327,10 @@ def create_post():
     data = request.json
     user_payload = request.user_payload
     user_email = user_payload.get("email")
-    
+
     if not user_email:
         return jsonify({"error": "User email not found in token"}), 400
-    
+
     # Validate required fields
     for field in ["category", "title", "description"]:
         if field not in data:
@@ -288,18 +343,27 @@ def create_post():
         "title": data["title"],
         "description": data["description"],
         "status": PostStatus.PROCESSING.value,
-        "created_at": datetime.now(timezone.utc)
+        "created_at": datetime.now(timezone.utc),
     }
     # Additional category-specific validation
     if post_category == PostCategory.ROOMMATE.value:
         for field in ["community", "rent", "start_date"]:
             if field not in data:
-                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
-        post_data.update({
-            "community": data["community"],
-            "rent": float(data["rent"]),
-            "start_date": datetime.fromisoformat(data["start_date"]),  # Assuming start_date is in ISO format
-        })
+                return (
+                    jsonify(
+                        {"error": f"{field} is required for category {post_category}"}
+                    ),
+                    400,
+                )
+        post_data.update(
+            {
+                "community": data["community"],
+                "rent": float(data["rent"]),
+                "start_date": datetime.fromisoformat(
+                    data["start_date"]
+                ),  # Assuming start_date is in ISO format
+            }
+        )
         gender_preference = data.get("general_preferences")
         if gender_preference not in [gender.value for gender in GenderPreference]:
             gender_preference = GenderPreference.ANY.value
@@ -308,46 +372,72 @@ def create_post():
     elif post_category == PostCategory.SELL.value:
         for field in ["price", "item"]:
             if field not in data:
-                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
-        post_data.update({
-            "price": float(data["price"]),  # Assuming price is a float
-            "item": data["item"]
-        })
+                return (
+                    jsonify(
+                        {"error": f"{field} is required for category {post_category}"}
+                    ),
+                    400,
+                )
+        post_data.update(
+            {
+                "price": float(data["price"]),  # Assuming price is a float
+                "item": data["item"],
+            }
+        )
         sub_category = data.get("sub_category")
         if sub_category not in [sub.value for sub in SubCategory]:
             sub_category = SubCategory.OTHER.value  # Default to OTHER if not provided
         post_data["sub_category"] = sub_category
-        
+
     elif post_category == PostCategory.CARPOOL.value:
         for field in ["from_location", "to_location", "departure_time"]:
             if field not in data:
-                return jsonify({"error": f"{field} is required for category {post_category}"}), 400
-        post_data.update({
-            "from_location": data["from_location"],
-            "to_location": data["to_location"],
-            "departure_time": datetime.fromisoformat(data["departure_time"]),  # Assuming departure_time is in ISO format
-            "seats_available": int(data.get("seats_available", 1))  # Default to 1 if not provided
-        })
+                return (
+                    jsonify(
+                        {"error": f"{field} is required for category {post_category}"}
+                    ),
+                    400,
+                )
+        post_data.update(
+            {
+                "from_location": data["from_location"],
+                "to_location": data["to_location"],
+                "departure_time": datetime.fromisoformat(
+                    data["departure_time"]
+                ),  # Assuming departure_time is in ISO format
+                "seats_available": int(
+                    data.get("seats_available", 1)
+                ),  # Default to 1 if not provided
+            }
+        )
 
     else:
         return jsonify({"error": "Invalid post category provided"}), 400
-    
+
+    post_data["description_vector"] = [0.0] * OPENAI_EMBEDDING_DIMENSIONS
     # Insert into DB with PROCESSING status
     post = posts.insert_one(post_data)
 
     # Kick off background moderation
     images = data.get("images", [])
-    Thread(target=async_moderate_post, args=(post.inserted_id, post_data, images, posts)).start()
+    Thread(
+        target=async_moderate_post, args=(post.inserted_id, post_data, images, posts)
+    ).start()
 
     # Return immediately
-    return jsonify({
-        "message": "Post submitted and is under moderation",
-        "post_id": str(post.inserted_id),
-        "status": PostStatus.PROCESSING.value
-    }), 202
+    return (
+        jsonify(
+            {
+                "message": "Post submitted and is under moderation",
+                "post_id": str(post.inserted_id),
+                "status": PostStatus.PROCESSING.value,
+            }
+        ),
+        202,
+    )
 
 
-@routes.route('/api/posts/<string:id>', methods=['GET'])
+@routes.route("/api/posts/<string:id>", methods=["GET"])
 @jwt_required
 def get_post(id):
     """
@@ -380,7 +470,7 @@ def get_post(id):
         return jsonify({"error": "User email not found in token"}), 400
 
     try:
-        post = posts.find_one({"_id": ObjectId(id)})
+        post = posts.find_one({"_id": ObjectId(id)}, {"description_vector": 0})
     except Exception as e:
         return jsonify({"error": "Invalid post ID format"}), 400
 
@@ -401,7 +491,7 @@ def get_post(id):
     return jsonify(post), 200
 
 
-@routes.route('/api/posts/<string:id>', methods=['DELETE'])
+@routes.route("/api/posts/<string:id>", methods=["DELETE"])
 @jwt_required
 def delete_post(id):
     """
@@ -445,14 +535,13 @@ def delete_post(id):
         return jsonify({"error": "You are not authorized to delete this post"}), 403
 
     posts.update_one(
-        {"_id": ObjectId(id)},
-        {"$set": {"status": PostStatus.DELETED.value}}
+        {"_id": ObjectId(id)}, {"$set": {"status": PostStatus.DELETED.value}}
     )
 
     return jsonify({"message": "Post marked as deleted"}), 200
 
 
-@routes.route('/api/posts/<string:id>', methods=['PATCH'])
+@routes.route("/api/posts/<string:id>", methods=["PATCH"])
 @jwt_required
 def update_post(id):
     """
@@ -500,13 +589,13 @@ def update_post(id):
 
     if post.get("owner") != user_email:
         return jsonify({"error": "You are not authorized to update this post"}), 403
-    
+
     immutable_statuses = {
         PostStatus.DELETED.value,  # Assuming DELETED is a final state
         PostStatus.FAILED.value,  # Posts in FAILED status cannot be updated
-        PostStatus.PROCESSING.value  # Posts in PROCESSING status cannot be updated
+        PostStatus.PROCESSING.value,  # Posts in PROCESSING status cannot be updated
     }
-    
+
     if post.get("status") in immutable_statuses:
         return jsonify({"error": "Post in current status cannot be updated"}), 400
 
@@ -516,25 +605,24 @@ def update_post(id):
     if not new_status:
         return jsonify({"error": "Missing 'status' field in request body"}), 400
 
-    allowed_statuses = {
-        PostStatus.PUBLISHED.value,
-        PostStatus.CLOSED.value
-    }
+    allowed_statuses = {PostStatus.PUBLISHED.value, PostStatus.CLOSED.value}
 
     if new_status not in allowed_statuses:
-        return jsonify({
-            "error": f"Invalid status. Allowed values: {', '.join(allowed_statuses)}"
-        }), 400
+        return (
+            jsonify(
+                {
+                    "error": f"Invalid status. Allowed values: {', '.join(allowed_statuses)}"
+                }
+            ),
+            400,
+        )
 
-    posts.update_one(
-        {"_id": ObjectId(id)},
-        {"$set": {"status": new_status}}
-    )
+    posts.update_one({"_id": ObjectId(id)}, {"$set": {"status": new_status}})
 
     return jsonify({"message": f"Post status updated to {new_status}"}), 200
 
 
-@routes.route('/api/myposts', methods=['GET'])
+@routes.route("/api/myposts", methods=["GET"])
 @jwt_required
 def get_my_posts():
     """
@@ -588,10 +676,7 @@ def get_my_posts():
     if page < 1 or limit < 1:
         return jsonify({"error": "Page and limit must be positive integers"}), 400
 
-    query = {
-        "owner": user_email,
-        "status": {"$ne": PostStatus.DELETED.value}
-    }
+    query = {"owner": user_email, "status": {"$ne": PostStatus.DELETED.value}}
 
     if status:
         query["status"] = status
@@ -600,13 +685,15 @@ def get_my_posts():
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"description": {"$regex": search, "$options": "i"}},
         ]
 
     sort = [("created_at", 1 if sort_order == "asc" else -1)]
     skip = (page - 1) * limit
 
-    cursor = posts.find(query).sort(sort).skip(skip).limit(limit)
+    cursor = (
+        posts.find(query, {"description_vector": 0}).sort(sort).skip(skip).limit(limit)
+    )
     total = posts.count_documents(query)
 
     results = []
@@ -614,15 +701,102 @@ def get_my_posts():
         post["_id"] = str(post["_id"])
         results.append(post)
 
-    return jsonify({
-        "posts": results,
-        "page": page,
-        "limit": limit,
-        "total": total
-    }), 200
+    return (
+        jsonify({"posts": results, "page": page, "limit": limit, "total": total}),
+        200,
+    )
 
 
-@routes.route('/api/posts', methods=['GET'])
+@routes.route("/api/posts/semanticsearch", methods=["POST"])
+@jwt_required
+def semantic_search_posts():
+    """
+    Semantic search for posts using vector similarity.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            query:
+              type: string
+              description: The natural language query to search posts by meaning
+              example: "room near campus with parking"
+    responses:
+      200:
+        description: List of posts ranked by semantic relevance
+        schema:
+          type: object
+          properties:
+            posts:
+              type: array
+              items:
+                type: object
+      400:
+        description: Missing or invalid query string
+    """
+    data = request.json
+    query = data.get("query", "").strip()
+
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+
+    query_embedding = get_openai_embedding(query)
+
+    posts = get_posts_collection()
+    results = posts.aggregate(
+        [
+            {
+                "$search": {
+                    "vectorSearch": {
+                        "path": "description_vector",
+                        "vector": query_embedding,
+                        "k": 9,
+                        "similarity": "cosine",
+                    }
+                }
+            },
+            {"$match": {"status": PostStatus.PUBLISHED.value}},
+            {
+                "$project": {
+                    "_id": {"$toString": "$_id"},
+                    "title": 1,
+                    "description": 1,
+                    "category": 1,
+                    "owner": 1,
+                    "status": 1,
+                    "created_at": 1,
+                    "image_url": 1,
+                    "sub_category": 1,
+                    "community": 1,
+                    "rent": 1,
+                    "start_date": 1,
+                    "gender_preference": 1,
+                    "item": 1,
+                    "price": 1,
+                    "from_location": 1,
+                    "to_location": 1,
+                    "departure_time": 1,
+                    "seats_available": 1,
+                }
+            },
+        ]
+    )
+
+    response = []
+    for post in results:
+        post["_id"] = str(post["_id"])
+        response.append(post)
+
+    return jsonify(response), 200
+
+
+@routes.route("/api/posts", methods=["GET"])
 @jwt_required
 def get_posts():
     """
@@ -667,22 +841,22 @@ def get_posts():
     if page < 1 or limit < 1:
         return jsonify({"error": "Page and limit must be positive integers"}), 400
 
-    query = {
-        "status": PostStatus.PUBLISHED.value
-    }
+    query = {"status": PostStatus.PUBLISHED.value}
 
     if category:
         query["category"] = category
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"description": {"$regex": search, "$options": "i"}},
         ]
 
     sort = [("created_at", 1 if sort_order == "asc" else -1)]
     skip = (page - 1) * limit
 
-    cursor = posts.find(query).sort(sort).skip(skip).limit(limit)
+    cursor = (
+        posts.find(query, {"description_vector": 0}).sort(sort).skip(skip).limit(limit)
+    )
     total = posts.count_documents(query)
 
     results = []
@@ -690,27 +864,22 @@ def get_posts():
         post["_id"] = str(post["_id"])
         results.append(post)
 
-    return jsonify({
-        "posts": results,
-        "page": page,
-        "limit": limit,
-        "total": total
-    }), 200
+    return (
+        jsonify({"posts": results, "page": page, "limit": limit, "total": total}),
+        200,
+    )
+
 
 def rsa_signer(message):
-    with open(PRIVATE_KEY_PATH, 'rb') as key_file:
-        private_key = serialization.load_pem_private_key(
-            key_file.read(),
-            password=None
-        )
+    with open(PRIVATE_KEY_PATH, "rb") as key_file:
+        private_key = serialization.load_pem_private_key(key_file.read(), password=None)
         signature = private_key.sign(
-            message.encode('utf-8'),
-            padding.PKCS1v15(),
-            hashes.SHA1()
+            message.encode("utf-8"), padding.PKCS1v15(), hashes.SHA1()
         )
-        return base64.b64encode(signature).decode('utf-8')
+        return base64.b64encode(signature).decode("utf-8")
 
-@routes.route('/api/signedcookie', methods=['GET'])
+
+@routes.route("/api/signedcookie", methods=["GET"])
 @jwt_required
 def get_signed_cookie():
     """
@@ -742,14 +911,22 @@ def get_signed_cookie():
     # Sign the policy
     signature = rsa_signer(policy)
 
-    return jsonify({
-        "CloudFront-Policy": base64.b64encode(policy.encode('utf-8')).decode('utf-8'),
-        "CloudFront-Signature": signature,
-        "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
-        "expires": expires
-    }), 200
+    return (
+        jsonify(
+            {
+                "CloudFront-Policy": base64.b64encode(policy.encode("utf-8")).decode(
+                    "utf-8"
+                ),
+                "CloudFront-Signature": signature,
+                "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
+                "expires": expires,
+            }
+        ),
+        200,
+    )
 
-@routes.route('/api/signedurl', methods=['GET'])
+
+@routes.route("/api/signedurl", methods=["GET"])
 @jwt_required
 def get_signed_url():
     """
@@ -781,15 +958,22 @@ def get_signed_url():
     # Sign the policy
     signature = rsa_signer(policy)
 
-    return jsonify({
-        "CloudFront-Policy": base64.b64encode(policy.encode('utf-8')).decode('utf-8'),
-        "CloudFront-Signature": signature,
-        "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
-        "expires": expires,
-    }), 200
+    return (
+        jsonify(
+            {
+                "CloudFront-Policy": base64.b64encode(policy.encode("utf-8")).decode(
+                    "utf-8"
+                ),
+                "CloudFront-Signature": signature,
+                "CloudFront-Key-Pair-Id": KEY_PAIR_ID,
+                "expires": expires,
+            }
+        ),
+        200,
+    )
 
 
-@routes.route('/api/users/me', methods=['DELETE'])
+@routes.route("/api/users/me", methods=["DELETE"])
 @jwt_required
 def delete_current_user():
     """
@@ -820,19 +1004,16 @@ def delete_current_user():
 
     # Soft-delete posts
     posts.update_many(
-        {"owner": user_email},
-        {"$set": {"status": PostStatus.DELETED.value}}
+        {"owner": user_email}, {"$set": {"status": PostStatus.DELETED.value}}
     )
 
     # Soft-delete user
-    users.update_one(
-        {"email": user_email},
-        {"$set": {"status": "DELETED"}}
-    )
+    users.update_one({"email": user_email}, {"$set": {"status": "DELETED"}})
 
     return jsonify({"message": "Your account and posts have been deleted"}), 200
 
-@routes.route('/health', methods=['GET'])
+
+@routes.route("/health", methods=["GET"])
 def health_check():
     """
     Health check endpoint.

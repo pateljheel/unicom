@@ -51,25 +51,10 @@ variable "azs" {
 
 
 # ec2 variables
-variable "ami_id" {
-  description = "AMI ID to use for the EC2 instance"
-  type        = string
-  default     = null
-}
-variable "instance_type" {
-  description = "Instance type for the EC2 instance"
-  type        = string
-  default     = "t3.micro"
-}
-variable "key_name" {
-  description = "Key pair name for SSH access to the EC2 instance"
-  type        = string
-  default     = null
-}
 variable "health_check_path" {
   description = "Health check path for the ALB"
   type        = string
-  default     = "/"
+  default     = "/health"
 }
 
 # api gateway variables
@@ -109,11 +94,6 @@ variable "images_bucket_name" {
   type        = string
 }
 
-variable "app_bucket_name" {
-  description = "S3 bucket name for the application"
-  type        = string
-}
-
 # cloudfront variables
 variable "s3_images_origin_id" {
   description = "Origin ID for S3 bucket in CloudFront"
@@ -132,4 +112,15 @@ variable "s3_distribution_public_key" {
   description = "Path to the public key for CloudFront signing"
   type        = string
   default     = "keys/public_key.pem" # Update this path to your public key file
+}
+
+variable "openai_api_key" {
+  description = "OpenAI API key for the application"
+  type        = string
+  sensitive   = true
+}
+
+variable "api_container_image" {
+  description = "Container image for the API application"
+  type        = string
 }
