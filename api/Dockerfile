@@ -4,6 +4,12 @@ FROM python:3.12-slim
 # Set the working directory to /app
 WORKDIR /app
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Download the AWS RDS global trust store
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 

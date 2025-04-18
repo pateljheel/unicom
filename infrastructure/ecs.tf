@@ -142,6 +142,8 @@ resource "aws_ecs_task_definition" "app_task" {
         { name = "CLOUDFRONT_PRIVATE_KEY_PATH", value = "private_key.pem" },
         { name = "OPENAI_API_KEY", value = var.openai_api_key },
         { name = "PRIVATE_KEY_DATA", value = tls_private_key.cloudfront_signing_key.private_key_pem },
+        { name = "SCORE_THRESHOLD", value = "0.8" },
+        { name = "TOP_K", value = "5" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
