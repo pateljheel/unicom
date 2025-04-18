@@ -1,6 +1,7 @@
 import os
 from openai import OpenAI
 import base64
+import numpy as np
 from models import *
 from typing import List
 from bson import ObjectId
@@ -17,7 +18,7 @@ routes = Blueprint("routes", __name__)
 
 CLOUDFRONT_URL = os.getenv(
     "CLOUDFRONT_URL"
-)  # e.g. https://d111111abcdef8.cloudfront.net/
+) 
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
 PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH")
 
@@ -32,6 +33,10 @@ OPENAI_EMBEDDING_DIMENSIONS = int(
     os.getenv("EMBEDDING_DIMENSIONS", 1536)
 )  # Default to 1536 if not set
 
+SCORE_THRESHOLD = float(
+    os.getenv("SCORE_THRESHOLD", 0.80)
+)
+TOP_K = int(os.getenv("TOP_K", 5))  # Default to 5 if not set
 
 @routes.route("/api/users", methods=["POST"])
 @jwt_required
@@ -707,93 +712,81 @@ def get_my_posts():
     )
 
 
+def cosine_similarity(vec1, vec2):
+    """Compute cosine similarity between two vectors."""
+    vec1 = np.array(vec1)
+    vec2 = np.array(vec2)
+    if np.linalg.norm(vec1) == 0 or np.linalg.norm(vec2) == 0:
+        return 0.0
+    return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
+
 @routes.route("/api/posts/semanticsearch", methods=["POST"])
 @jwt_required
 def semantic_search_posts():
-    """
-    Semantic search for posts using vector similarity.
-    ---
-    tags:
-      - Posts
-    security:
-      - Bearer: []
-    parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          properties:
-            query:
-              type: string
-              description: The natural language query to search posts by meaning
-              example: "room near campus with parking"
-    responses:
-      200:
-        description: List of posts ranked by semantic relevance
-        schema:
-          type: object
-          properties:
-            posts:
-              type: array
-              items:
-                type: object
-      400:
-        description: Missing or invalid query string
-    """
     data = request.json
     query = data.get("query", "").strip()
-
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
     query_embedding = get_openai_embedding(query)
+    similarity_threshold = SCORE_THRESHOLD
 
     posts = get_posts_collection()
-    results = posts.aggregate(
-        [
-            {
-                "$search": {
-                    "vectorSearch": {
-                        "path": "description_vector",
-                        "vector": query_embedding,
-                        "k": 9,
-                        "similarity": "cosine",
-                    }
-                }
-            },
-            {"$match": {"status": PostStatus.PUBLISHED.value}},
-            {
-                "$project": {
-                    "_id": {"$toString": "$_id"},
-                    "title": 1,
-                    "description": 1,
-                    "category": 1,
-                    "owner": 1,
-                    "status": 1,
-                    "created_at": 1,
-                    "image_url": 1,
-                    "sub_category": 1,
-                    "community": 1,
-                    "rent": 1,
-                    "start_date": 1,
-                    "gender_preference": 1,
-                    "item": 1,
-                    "price": 1,
-                    "from_location": 1,
-                    "to_location": 1,
-                    "departure_time": 1,
-                    "seats_available": 1,
-                }
-            },
-        ]
-    )
 
-    response = []
-    for post in results:
-        post["_id"] = str(post["_id"])
-        response.append(post)
+    # Fetch top-k candidates with vector search
+    raw_results = posts.aggregate([
+        {
+            "$search": {
+                "vectorSearch": {
+                    "path": "description_vector",
+                    "vector": query_embedding,
+                    "k": TOP_K, 
+                    "similarity": "cosine",
+                }
+            }
+        },
+        {"$match": {"status": PostStatus.PUBLISHED.value}},
+        {
+            "$project": {
+                "_id": {"$toString": "$_id"},
+                "title": 1,
+                "description": 1,
+                "category": 1,
+                "owner": 1,
+                "status": 1,
+                "created_at": 1,
+                "image_url": 1,
+                "sub_category": 1,
+                "community": 1,
+                "rent": 1,
+                "start_date": 1,
+                "gender_preference": 1,
+                "item": 1,
+                "price": 1,
+                "from_location": 1,
+                "to_location": 1,
+                "departure_time": 1,
+                "seats_available": 1,
+                "description_vector": 1,
+            }
+        }
+    ])
 
-    return jsonify(response), 200
+    filtered_results = []
+    for post in raw_results:
+        post_vec = post.get("description_vector")
+        if not post_vec:
+            continue
+        score = cosine_similarity(query_embedding, post_vec)
+        if score >= similarity_threshold:
+            post["_id"] = str(post["_id"])
+            post["score"] = score  # Optional: include score in response
+            filtered_results.append(post)
+
+    # Optionally sort by similarity score
+    filtered_results.sort(key=lambda x: x["score"], reverse=True)
+
+    return jsonify(filtered_results), 200
 
 
 @routes.route("/api/posts", methods=["GET"])
