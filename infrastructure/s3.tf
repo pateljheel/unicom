@@ -45,19 +45,6 @@ resource "aws_s3_bucket" "images_bucket" {
   )
 }
 
-resource "aws_s3_bucket" "app_bucket" {
-  bucket        = "${var.app_bucket_name}-${var.app_environment}"
-  force_destroy = true # Allows deletion of the bucket even if it contains objects
-
-  tags = merge(
-    var.additional_tags,
-    {
-      "Name"        = "${var.app_bucket_name}-${var.app_environment}",
-      "Environment" = var.app_environment,
-    }
-  )
-}
-
 resource "aws_iam_policy" "s3_full_access_policy" {
   name        = "${var.app_name}-${var.app_environment}-s3-full-access"
   description = "Allow full access to image buckets"
@@ -77,33 +64,8 @@ resource "aws_iam_policy" "s3_full_access_policy" {
           "s3:GetObjectAcl"
         ],
         Resource = [
-          "arn:aws:s3:::${var.images_bucket_name}-${var.app_environment}",
-          "arn:aws:s3:::${var.images_bucket_name}-${var.app_environment}/*",
-        ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "s3_view_access_policy" {
-  name        = "${var.app_name}-${var.app_environment}-s3-view-access"
-  description = "Allow view access to app buckets"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "AllowS3ViewAccessForAppData",
-        Effect = "Allow",
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation",
-          "s3:GetObjectAcl"
-        ],
-        Resource = [
-          "arn:aws:s3:::${var.app_bucket_name}-${var.app_environment}",
-          "arn:aws:s3:::${var.app_bucket_name}-${var.app_environment}/*",
+          "${aws_s3_bucket.images_bucket.arn}",
+          "${aws_s3_bucket.images_bucket.arn}/*",
         ]
       }
     ]
@@ -130,6 +92,23 @@ resource "aws_s3_bucket_policy" "images_bucket_policy" {
             "AWS:SourceArn" : "${aws_cloudfront_distribution.s3_distribution.arn}"
           }
         }
+      },
+      {
+        Sid    = "AllowECSTasksToAccessImages",
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_iam_role.asg_instance_role.arn
+        },
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "${aws_s3_bucket.images_bucket.arn}",
+          "${aws_s3_bucket.images_bucket.arn}/*"
+        ]
       }
     ]
   })

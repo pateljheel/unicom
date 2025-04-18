@@ -91,13 +91,13 @@ resource "aws_security_group_rule" "db_allow_from_asg" {
   description              = "Allow from ASG to DocumentDB"
 }
 
-resource "aws_security_group_rule" "db_allow_from_any" {
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 27017
-  to_port           = 27017
-  security_group_id = aws_security_group.db_sg.id
-  cidr_blocks       = ["0.0.0.0/0"]
-  description       = "Allow from Anywhere to DocumentDB"
-}
+# resource "aws_security_group_rule" "db_allow_from_any" {
+#   type              = "ingress"
+#   protocol          = "tcp"
+#   from_port         = 27017
+#   to_port           = 27017
+#   security_group_id = aws_security_group.db_sg.id
+#   cidr_blocks       = ["0.0.0.0/0"]
+#   description       = "Allow from Anywhere to DocumentDB"
+# }
 

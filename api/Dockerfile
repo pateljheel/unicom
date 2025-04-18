@@ -4,6 +4,9 @@ FROM python:3.12-slim
 # Set the working directory to /app
 WORKDIR /app
 
+# Download the AWS RDS global trust store
+RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
 # Copy the requirements into the container at /app
 COPY requirements.txt /app
 

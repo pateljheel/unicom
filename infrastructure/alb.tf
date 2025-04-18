@@ -26,30 +26,30 @@ resource "aws_lb" "alb" {
   depends_on = [ aws_security_group.alb_sg ]
 }
 
-# ALB target group
-resource "aws_lb_target_group" "alb_target_group" {
-  name     = "${var.app_name}-${var.app_environment}-asg-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = local.alb_vpc_id
+# # ALB target group
+# resource "aws_lb_target_group" "alb_target_group" {
+#   name     = "${var.app_name}-${var.app_environment}-asg-tg"
+#   port     = 8080
+#   protocol = "HTTP"
+#   vpc_id   = local.alb_vpc_id
 
-  health_check {
-    path                = "/health"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    matcher             = "200-299"
-  }
+#   health_check {
+#     path                = "/health"
+#     interval            = 30
+#     timeout             = 5
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     matcher             = "200-299"
+#   }
 
-  tags = merge(
-    var.additional_tags,
-    {
-      "Name"        = "${var.app_name}-${var.app_environment}-tg",
-      "Environment" = var.app_environment,
-    }
-  )
-}
+#   tags = merge(
+#     var.additional_tags,
+#     {
+#       "Name"        = "${var.app_name}-${var.app_environment}-tg",
+#       "Environment" = var.app_environment,
+#     }
+#   )
+# }
 
 # ALB http listener
 resource "aws_lb_listener" "alb_http_listener" {
@@ -59,7 +59,8 @@ resource "aws_lb_listener" "alb_http_listener" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.alb_target_group.arn
+    # target_group_arn = aws_lb_target_group.alb_target_group.arn
+    target_group_arn = aws_lb_target_group.app_tg.arn
   }
 
   tags = merge(
@@ -70,7 +71,7 @@ resource "aws_lb_listener" "alb_http_listener" {
     }
   )
 
-  depends_on = [ aws_lb_target_group.alb_target_group ]
+  # depends_on = [ aws_lb_target_group.alb_target_group ]
 }
 
 # ALB security group

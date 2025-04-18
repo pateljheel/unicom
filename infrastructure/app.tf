@@ -78,36 +78,6 @@ locals {
   }
 }
 
-# Upload API app files excluding .env
-resource "aws_s3_object" "app_files" {
-  for_each = {
-    for file in setsubtract(fileset("${path.module}/../api", "**"), [".env"]) : file => file
-  }
-
-  bucket = aws_s3_bucket.app_bucket.id
-  key    = "app/${each.value}"
-  source = "${path.module}/../api/${each.value}"
-  etag   = filemd5("${path.module}/../api/${each.value}")
-}
-
-# Upload CloudFront signing private key
-resource "aws_s3_object" "private_key" {
-  bucket       = aws_s3_bucket.app_bucket.id
-  key          = "keys/private_key.pem"
-  content      = tls_private_key.cloudfront_signing_key.private_key_pem
-  acl          = "private"
-  content_type = "application/x-pem-file"
-}
-
-# Upload CloudFront signing public key
-resource "aws_s3_object" "public_key" {
-  bucket       = aws_s3_bucket.app_bucket.id
-  key          = "keys/public_key.pem"
-  content      = tls_private_key.cloudfront_signing_key.public_key_pem
-  acl          = "private"
-  content_type = "application/x-pem-file"
-}
-
 # Upload website frontend build files (recursive)
 resource "aws_s3_object" "website_files" {
   count = local.build_dir_exists ? length(local.build_dir_files) : 0
@@ -129,16 +99,6 @@ resource "aws_s3_object" "website_files" {
     lower(regex("\\.([^.]+)$", tolist(local.build_dir_files)[count.index])[0]),
     "binary/octet-stream"
   )
-}
-
-# Generate and upload .env file to S3
-resource "aws_s3_object" "generated_env" {
-  bucket       = aws_s3_bucket.app_bucket.id
-  key          = "app/.env"
-  content      = local.env_content
-  content_type = "text/plain"
-
-  depends_on = [aws_s3_object.app_files]
 }
 
 # Write local development .env
