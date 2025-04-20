@@ -4,6 +4,7 @@ import infra_config from '../../../public/infra_config.json';
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
+import { formatDateTimeUTC, formatDateUTC } from "@/lib/utils"
 
 interface Post {
   _id: string;
@@ -119,7 +120,7 @@ export default function MyFeedPage() {
       }
   
       const data = await response.json();
-      let fetchedPosts: Post[] = (data.posts as Post[]) || [];
+      let fetchedPosts: Post[] = (data as Post[]) || [];
   
       fetchedPosts = fetchedPosts.map((post: Post) => {
         if (post.image_url && post.image_url.length > 0 && signedUrlData) {
@@ -413,7 +414,7 @@ export default function MyFeedPage() {
                       )}
                       {post.start_date && (
                         <p className="text-gray-700">
-                          Start Date: {new Date(post.start_date).toLocaleDateString()}
+                          Start Date: {formatDateUTC(post.start_date)}
                         </p>
                       )}
                       {post.gender_preference && (
@@ -445,7 +446,7 @@ export default function MyFeedPage() {
                       )}
                       {post.departure_time && (
                         <p className="text-gray-700">
-                          Departure: {new Date(post.departure_time).toLocaleString()}
+                          Departure: {formatDateTimeUTC(post.departure_time)}
                         </p>
                       )}
                       {post.seats_available !== undefined && (
@@ -564,7 +565,7 @@ export default function MyFeedPage() {
                   {selectedPost.start_date && (
                     <p>
                       <strong>Start Date:</strong>{" "}
-                      {new Date(selectedPost.start_date).toLocaleDateString()}
+                      {formatDateUTC(selectedPost.start_date)}
                     </p>
                   )}
                   {selectedPost.gender_preference && (
@@ -600,7 +601,7 @@ export default function MyFeedPage() {
                   {selectedPost.departure_time && (
                     <p>
                       <strong>Departure:</strong>{" "}
-                      {new Date(selectedPost.departure_time).toLocaleString()}
+                      {formatDateTimeUTC(selectedPost.departure_time)}
                     </p>
                   )}
                   {selectedPost.seats_available !== undefined && (
