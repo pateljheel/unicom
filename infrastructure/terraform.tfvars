@@ -18,8 +18,8 @@ db_password = "password1234" # Change this to a secure password
 db_instance_class = "db.t3.medium"
 
 # s3 variables
-website_bucket_name = "unicom-website-02"
-images_bucket_name = "unicom-images-02"
+website_bucket_name = "unicom-website-03"
+images_bucket_name = "unicom-images-03"
 
 # cloudfront variables
 s3_images_origin_id = "unicom-s3-images-origin"
