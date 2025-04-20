@@ -87,8 +87,8 @@ resource "aws_security_group_rule" "db_allow_from_asg" {
   from_port                = 27017
   to_port                  = 27017
   security_group_id        = aws_security_group.db_sg.id
-  source_security_group_id = aws_security_group.asg_sg.id
-  description              = "Allow from ASG to DocumentDB"
+  source_security_group_id = aws_security_group.ecs_sg.id
+  description              = "Allow from ECS to DocumentDB"
 }
 
 resource "aws_security_group_rule" "db_allow_from_any" {

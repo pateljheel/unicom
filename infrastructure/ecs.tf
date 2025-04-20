@@ -11,8 +11,8 @@ resource "aws_ecs_cluster" "app_cluster" {
   )
 }
 
-# Security group for ASG
-resource "aws_security_group" "asg_sg" {
+# Security group for ECS
+resource "aws_security_group" "ecs_sg" {
   name        = "${var.app_name}-${var.app_environment}-asg-sg"
   description = "Security group for ASG"
   vpc_id      = aws_vpc.main.id
@@ -32,7 +32,7 @@ resource "aws_security_group_rule" "asg_allow_all_outbound" {
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
-  security_group_id = aws_security_group.asg_sg.id
+  security_group_id = aws_security_group.ecs_sg.id
   cidr_blocks       = ["0.0.0.0/0"]
   description       = "Allow all outbound"
 }
@@ -43,7 +43,7 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   protocol                 = "tcp"
   from_port                = 8080
   to_port                  = 8080
-  security_group_id        = aws_security_group.asg_sg.id
+  security_group_id        = aws_security_group.ecs_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
 
   description = "Allow HTTP from internal load balancer"
@@ -206,7 +206,7 @@ resource "aws_ecs_service" "app_service" {
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
     assign_public_ip = false
-    security_groups  = [aws_security_group.asg_sg.id]
+    security_groups  = [aws_security_group.ecs_sg.id]
   }
 
   load_balancer {
