@@ -54,7 +54,7 @@ resource "aws_docdb_cluster_instance" "db_instances" {
   )
 }
 
-# Security group for ASG
+# Security group for db
 resource "aws_security_group" "db_sg" {
   name        = "${var.app_name}-${var.app_environment}-db-sg"
   description = "Security group for Document DB"
@@ -81,7 +81,7 @@ resource "aws_security_group_rule" "db_allow_all_outbound" {
 }
 
 # Allow HTTP from internal load balancer
-resource "aws_security_group_rule" "db_allow_from_asg" {
+resource "aws_security_group_rule" "db_allow_from_ecs" {
   type                     = "ingress"
   protocol                 = "tcp"
   from_port                = 27017
