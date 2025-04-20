@@ -1792,45 +1792,48 @@ export default function MyPostsPage() {
   };
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
-    try {
-      const idToken = localStorage.getItem("id_token");
-      if (!idToken) {
-        console.error("No ID token found");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}api/posts/${postId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to update post status", response.status);
-        return;
-      }
-
-      setPosts(
-        posts.map((post) =>
-          post._id === postId ? { ...post, status: newStatus } : post
-        )
-      );
-      setSearchResults(
-        searchResults.map((post) =>
-          post._id === postId ? { ...post, status: newStatus } : post
-        )
-      );
-
-      if (selectedPost && selectedPost._id === postId) {
-        setSelectedPost({ ...post, status: newStatus });
-      }
-    } catch (error) {
-      console.error("Error updating post status:", error);
+  try {
+    const idToken = localStorage.getItem("id_token");
+    if (!idToken) {
+      console.error("No ID token found");
+      return;
     }
-  };
+
+    const response = await fetch(`${API_URL}api/posts/${postId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to update post status", response.status);
+      return;
+    }
+
+    setPosts(
+      posts.map((post) =>
+        post._id === postId ? { ...post, status: newStatus } : post
+      )
+    );
+    setSearchResults(
+      searchResults.map((post) =>
+        post._id === postId ? { ...post, status: newStatus } : post
+      )
+    );
+
+    // Fix: Use selectedPost instead of post
+    if (selectedPost && selectedPost._id === postId) {
+      setSelectedPost({ ...selectedPost, status: newStatus });
+    }
+  } catch (error) {
+    console.error("Error updating post status:", error);
+  }
+};
+
+  
 
   useEffect(() => {
     if (!signedUrlData) return;
