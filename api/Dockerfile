@@ -4,8 +4,9 @@ FROM python:3.12-slim
 # Set the working directory to /app
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (added curl here)
 RUN apt-get update && apt-get install -y \
+    curl \
     wget \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*

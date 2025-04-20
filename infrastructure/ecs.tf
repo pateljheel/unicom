@@ -1,7 +1,7 @@
 # ECS Cluster
 resource "aws_ecs_cluster" "app_cluster" {
   name = "${var.app_name}-${var.app_environment}-ecs-cluster"
-  
+
   tags = merge(
     var.additional_tags,
     {
@@ -153,6 +153,13 @@ resource "aws_ecs_task_definition" "app_task" {
           awslogs-stream-prefix = "ecs"
         }
       }
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
+      }
     }
   ])
 
@@ -164,7 +171,7 @@ resource "aws_ecs_task_definition" "app_task" {
     }
   )
 
-  depends_on = [ aws_cloudwatch_log_group.ecs_app_log_group ]
+  depends_on = [aws_cloudwatch_log_group.ecs_app_log_group]
 }
 
 resource "aws_lb_target_group" "app_tg" {
