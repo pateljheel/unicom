@@ -142,8 +142,8 @@ export default function MyPostsPage() {
       setSearchResults(fetchedPosts);
       setIsSemanticSearch(true);
 
-      const uniqueOwners = Array.from(new Set(fetchedPosts.map((post) => post.owner)));
-      uniqueOwners.forEach((ownerEmail) => {
+      const uniqueOwners = Array.from(new Set(fetchedPosts.map((post: Post) => post.owner))) as string[];
+      uniqueOwners.forEach((ownerEmail: string) => {
         fetchUserInfo(ownerEmail);
       });
     } catch (error) {

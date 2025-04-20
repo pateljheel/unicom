@@ -93,7 +93,7 @@ export default function MyFeedPage() {
 
   const handleSemanticSearch = async () => {
     if (!semanticSearchTerm.trim()) return;
-    
+  
     try {
       setSemanticSearching(true);
       const idToken = localStorage.getItem("id_token");
@@ -101,29 +101,26 @@ export default function MyFeedPage() {
         console.error("No ID token found");
         return;
       }
-
-      const response = await fetch(
-        `${API_URL}api/posts/semanticsearch`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            query: semanticSearchTerm
-          }),
-        }
-      );
-
+  
+      const response = await fetch(`${API_URL}api/posts/semanticsearch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          query: semanticSearchTerm,
+        }),
+      });
+  
       if (!response.ok) {
         console.error("Failed to perform semantic search", response.status);
         return;
       }
-
+  
       const data = await response.json();
-      let fetchedPosts = data || [];
-
+      let fetchedPosts: Post[] = (data.posts as Post[]) || [];
+  
       fetchedPosts = fetchedPosts.map((post: Post) => {
         if (post.image_url && post.image_url.length > 0 && signedUrlData) {
           const updatedUrls = post.image_url.map((url) => {
@@ -139,15 +136,14 @@ export default function MyFeedPage() {
         }
         return post;
       });
-
+  
       setSearchResults(fetchedPosts);
       setIsSemanticSearch(true);
-
-      const uniqueOwners = Array.from(new Set(fetchedPosts.map((post) => post.owner)));
+  
+      const uniqueOwners = Array.from(new Set(fetchedPosts.map((post: Post) => post.owner)));
       uniqueOwners.forEach((ownerEmail) => {
         fetchUserInfo(ownerEmail);
       });
-
     } catch (error) {
       console.error("Error performing semantic search:", error);
     } finally {
