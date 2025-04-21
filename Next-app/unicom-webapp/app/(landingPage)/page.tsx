@@ -23,8 +23,7 @@ export default function Home() {
           </h1>
 
           <p className="text-base sm:text-lg text-[#333] max-w-md leading-relaxed">
-            Find roommates, sell items, arrange carpools, and more –
-            <br />
+            Find roommates, sell items, arrange carpools, and more –<br />
             all in one place, exclusively for RIT students.
           </p>
 
@@ -41,7 +40,7 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              variant="outline"
+              variant="primaryOutline"
               className="border-2 border-[#f76902] text-[#f76902] hover:bg-orange-50 font-semibold px-6 py-2.5 rounded-md shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all duration-200"
             >
               <Link href="/features">Learn More</Link>
