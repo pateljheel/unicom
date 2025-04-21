@@ -1,54 +1,89 @@
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+"use client";
 
-export default function Home() {
+import { Home, ShoppingBag, Car, Users, Search } from "lucide-react";
+
+export default function FeaturesPage() {
   return (
-    <section className="w-full bg-white flex items-center">
-      <div className="max-w-5xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between px-6 py-8 lg:py-12 gap-24 w-full">
-        {/* LEFT SIDE: TEXT */}
-        <div className="flex-1 flex flex-col justify-center space-y-6">
-          <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight text-neutral-900">
-            Connect with your <span className="text-[#f4600c]">RIT</span> community
-          </h1>
-          <p className="text-base sm:text-lg text-gray-600">
-            Find roommates, sell items, arrange carpools, and more – all in one place,
-            exclusively for RIT students. It’s like a full-stack solution to your college chaos — no semicolons, no bugs, just roommates and rides.
-          </p>
-          <div className="flex items-center gap-4">
-            <Button
-              size="lg"
-              className="bg-[#f4600c] hover:bg-[#e25500] text-white font-semibold shadow-md"
-            >
-              <Link href="/feed" className="w-full h-full flex items-center justify-center">
-                Get Started
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="primaryOutline"
-              className="border-[#f4600c] text-[#f4600c] hover:bg-orange-50 font-semibold"
-            >
-              <Link href="/features" className="w-full h-full flex items-center justify-center">
-                Learn More
-              </Link>
-            </Button>
-          </div>
-        </div>
+    <main className="flex justify-center items-center w-full">
+      <FeaturesSection />
+    </main>
+  );
+}
 
-        {/* RIGHT SIDE: SMALLER IMAGE CARD */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="relative w-full max-w-sm h-64 sm:h-80 lg:h-[550px] rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src="/landing.png"
-              alt="Students using UniCom"
-              fill
-              priority
-              className="object-cover rounded-xl"
-            />
-          </div>
+export const FeaturesSection = () => {
+  return (
+    <section
+      className="w-full py-16 md:py-24 lg:py-32 bg-white"
+      id="features"
+      aria-label="Key Features"
+    >
+      <div className="max-w-screen-xl mx-auto px-4 md:px-8">
+        <header className="flex flex-col items-center text-center max-w-3xl mx-auto space-y-4 mb-12">
+          <h2 className="text-4xl font-extrabold tracking-tight text-gray-900">
+            Key Features
+          </h2>
+          <p className="text-lg text-gray-600">
+            Everything you need to connect with your university community
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center">
+          <FeatureCard
+            icon={<Home className="h-8 w-8" />}
+            title="Roommate Search"
+            description="Find the perfect roommate match through detailed profiles and preferences"
+            bg="bg-gradient-to-br from-purple-500 to-purple-700"
+          />
+          <FeatureCard
+            icon={<ShoppingBag className="h-8 w-8" />}
+            title="Buy & Sell"
+            description="Buy and sell items easily within the university community"
+            bg="bg-gradient-to-br from-pink-500 to-pink-700"
+          />
+          <FeatureCard
+            icon={<Car className="h-8 w-8" />}
+            title="Carpooling"
+            description="Share rides and split costs with fellow students heading the same way"
+            bg="bg-gradient-to-br from-yellow-500 to-yellow-700"
+          />
+          <FeatureCard
+            icon={<Users className="h-8 w-8" />}
+            title="RIT Email Only"
+            description="Secure platform exclusively for verified university students"
+            bg="bg-gradient-to-br from-indigo-500 to-indigo-700"
+          />
+          <FeatureCard
+            icon={<Search className="h-8 w-8" />}
+            title="Smart Search"
+            description="Find exactly what you need with our intelligent search functionality"
+            bg="bg-gradient-to-br from-cyan-500 to-cyan-700"
+          />
         </div>
       </div>
     </section>
   );
-}
+};
+
+const FeatureCard = ({
+  icon,
+  title,
+  description,
+  bg,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  bg: string;
+}) => {
+  return (
+    <article className="flex flex-col items-center text-center rounded-xl border border-gray-200 p-8 shadow-lg transition-transform hover:scale-[1.03] hover:shadow-2xl max-w-sm">
+      <div
+        className={`mb-6 flex h-16 w-16 items-center justify-center rounded-full ${bg} text-white shadow-md`}
+      >
+        {icon}
+      </div>
+      <h3 className="mb-2 text-xl font-semibold text-gray-900">{title}</h3>
+      <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+    </article>
+  );
+};

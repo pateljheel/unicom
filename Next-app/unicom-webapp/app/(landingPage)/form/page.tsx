@@ -16,6 +16,8 @@ export default function ListingForm() {
   const router = useRouter();
   const { token, isAuthenticated } = useAuth();
   const API_URL = `${infra_config.api_url}/api/posts`;
+  const [rideDate, setRideDate] = useState("");
+  const [rideTime, setRideTime] = useState("");
   
 
   useEffect(() => {
@@ -282,330 +284,267 @@ export default function ListingForm() {
           </div>
 
           {category === "ROOMMATE" && (
-            <>
-              <div className="mb-4">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea 
-                  id="description" 
-                  rows={3} 
-                  className={`mt-1 block w-full border ${
-                    errors.description ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("description")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="apartmentName" className="block text-sm font-medium text-gray-700">
-                  Community
-                </label>
-                <input 
-                  type="text" 
-                  id="apartmentName" 
-                  className={`mt-1 block w-full border ${
-                    errors.apartmentName ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("apartmentName")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="dateAvailability" className="block text-sm font-medium text-gray-700">
-                  Start Date
-                </label>
-                <input 
-                  type="date" 
-                  id="dateAvailability" 
-                  className={`mt-1 block w-full border ${
-                    errors.dateAvailability ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("dateAvailability")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="rent" className="block text-sm font-medium text-gray-700">
-                  Rent
-                </label>
-                <input 
-                  type="number" 
-                  id="rent" 
-                  min="0" 
-                  step="0.01" 
-                  defaultValue="1000" 
-                  className={`mt-1 block w-full border ${
-                    errors.rent ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("rent")}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Preferences
-                </label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => handlePreferenceToggle("Non-smoker")}
-                    className={`px-3 py-1 rounded-full border ${
-                      selectedPreferences.includes("Non-smoker")
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    Non-smoker
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePreferenceToggle("Pet-friendly")}
-                    className={`px-3 py-1 rounded-full border ${
-                      selectedPreferences.includes("Pet-friendly")
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    Pet-friendly
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePreferenceToggle("Cooking-enthusiast")}
-                    className={`px-3 py-1 rounded-full border ${
-                      selectedPreferences.includes("Cooking-enthusiast")
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    Cooking-enthusiast
-                  </button>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Add Custom Preference
-                </label>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    type="text"
-                    value={customPreference}
-                    onChange={(e) => setCustomPreference(e.target.value)}
-                    placeholder="Enter custom preference"
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCustomPreference}
-                    className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                  >
-                    Add
-                  </button>
-                </div>
-                {customPreferences.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {customPreferences.map((pref, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
-                      >
-                        {pref}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="genderPreference" className="block text-sm font-medium text-gray-700">
-                  Gender Preference
-                </label>
-                <select
-                  id="genderPreference"
-                  className={`mt-1 block w-full border ${
-                    errors.genderPreference ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
-                >
-                  <option value="ANY">Any</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                </select>
-                {renderError("genderPreference")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="uploadImagesRoommate" className="block text-sm font-medium text-gray-700">
-                  Upload Images
-                </label>
-                <input type="file" id="uploadImagesRoommate" multiple accept="image/*" className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" />
-              </div>
-            </>
-          )}
+  <>
+    <div className="mb-4">
+      <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        Description
+      </label>
+      <textarea 
+        id="description" 
+        rows={3} 
+        className={`mt-1 block w-full border ${
+          errors.description ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`} 
+      />
+      {renderError("description")}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="apartmentName" className="block text-sm font-medium text-gray-700">
+        Community
+      </label>
+      <input 
+        type="text" 
+        id="apartmentName" 
+        className={`mt-1 block w-full border ${
+          errors.apartmentName ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`} 
+      />
+      {renderError("apartmentName")}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="dateAvailability" className="block text-sm font-medium text-gray-700">
+        Start Date
+      </label>
+      <input 
+        type="date" 
+        id="dateAvailability" 
+        min={new Date().toISOString().split("T")[0]}  // <-- This sets today's date as the minimum
+        className={`mt-1 block w-full border ${
+          errors.dateAvailability ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`} 
+      />
+      {renderError("dateAvailability")}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="rent" className="block text-sm font-medium text-gray-700">
+        Rent
+      </label>
+      <input 
+        type="number" 
+        id="rent" 
+        min="0" 
+        step="0.01" 
+        defaultValue="1000" 
+        className={`mt-1 block w-full border ${
+          errors.rent ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`} 
+      />
+      {renderError("rent")}
+    </div>
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700">
+        Preferences
+      </label>
+      <div className="flex flex-wrap gap-2 mt-1">
+        <button
+          type="button"
+          onClick={() => handlePreferenceToggle("Non-smoker")}
+          className={`px-3 py-1 rounded-full border ${
+            selectedPreferences.includes("Non-smoker")
+              ? "bg-[#f76902] text-white"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          Non-smoker
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePreferenceToggle("Pet-friendly")}
+          className={`px-3 py-1 rounded-full border ${
+            selectedPreferences.includes("Pet-friendly")
+              ? "bg-[#f76902] text-white"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          Pet-friendly
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePreferenceToggle("Cooking-enthusiast")}
+          className={`px-3 py-1 rounded-full border ${
+            selectedPreferences.includes("Cooking-enthusiast")
+              ? "bg-[#f76902] text-white"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          Cooking-enthusiast
+        </button>
+      </div>
+    </div>
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700">
+        Add Custom Preference
+      </label>
+      <div className="flex gap-2 mt-1">
+        <input
+          type="text"
+          value={customPreference}
+          onChange={(e) => setCustomPreference(e.target.value)}
+          placeholder="Enter custom preference"
+          className="block w-full border-gray-300 rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]"
+        />
+        <button
+          type="button"
+          onClick={handleAddCustomPreference}
+          className="px-3 py-1 bg-[#f76902] text-white rounded-md hover:bg-[#db5d00]"
+        >
+          Add
+        </button>
+      </div>
+      {customPreferences.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {customPreferences.map((pref, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 bg-[#f76902]/20 text-[#f76902] rounded-full text-sm"
+            >
+              {pref}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="genderPreference" className="block text-sm font-medium text-gray-700">
+        Gender Preference
+      </label>
+      <select
+        id="genderPreference"
+        className={`mt-1 block w-full border ${
+          errors.genderPreference ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-[#f76902] focus:ring-[#f76902]"
+        } rounded-md shadow-sm`}
+      >
+        <option value="ANY">Any</option>
+        <option value="MALE">Male</option>
+        <option value="FEMALE">Female</option>
+      </select>
+      {renderError("genderPreference")}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="uploadImagesRoommate" className="block text-sm font-medium text-gray-700">
+        Upload Images
+      </label>
+      <input 
+        type="file" 
+        id="uploadImagesRoommate" 
+        multiple 
+        accept="image/*" 
+        className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" 
+      />
+    </div>
+  </>
+)}
 
-          {category === "CARPOOL" && (
-            <>
-              <div className="mb-4">
-                <label htmlFor="pickupLocation" className="block text-sm font-medium text-gray-700">
-                  Pickup Location
-                </label>
-                <input
-                  type="text"
-                  id="pickupLocation"
-                  placeholder="Enter pickup location"
-                  className={`mt-1 block w-full border ${
-                    errors.pickupLocation ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("pickupLocation")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="dropoffLocation" className="block text-sm font-medium text-gray-700">
-                  Drop-off Location
-                </label>
-                <input
-                  type="text"
-                  id="dropoffLocation"
-                  placeholder="Enter drop-off location"
-                  className={`mt-1 block w-full border ${
-                    errors.dropoffLocation ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("dropoffLocation")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="rideDate" className="block text-sm font-medium text-gray-700">
-                  Ride Date
-                </label>
-                <input 
-                  type="date" 
-                  id="rideDate" 
-                  className={`mt-1 block w-full border ${
-                    errors.rideDate ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("rideDate")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="rideTime" className="block text-sm font-medium text-gray-700">
-                  Ride Time
-                </label>
-                <input 
-                  type="time" 
-                  id="rideTime" 
-                  className={`mt-1 block w-full border ${
-                    errors.rideTime ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("rideTime")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="availableSeats" className="block text-sm font-medium text-gray-700">
-                  Available Seats
-                </label>
-                <input 
-                  type="number" 
-                  id="availableSeats" 
-                  min="1" 
-                  defaultValue="1" 
-                  className={`mt-1 block w-full border ${
-                    errors.availableSeats ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
-                />
-                {renderError("availableSeats")}
-              </div>
-            </>
-          )}
+{category === "CARPOOL" && (
+  <>
+    {/* Pickup Location */}
+    <div className="mb-4">
+      <label htmlFor="pickupLocation" className="block text-sm font-medium text-gray-700">
+        Pickup Location
+      </label>
+      <input
+        type="text"
+        id="pickupLocation"
+        placeholder="Enter pickup location"
+        className={`mt-1 block w-full border ${
+          errors.pickupLocation ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+      />
+      {renderError("pickupLocation")}
+    </div>
 
-          {category === "SELL" && (
-            <>
-              <div className="mb-4">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  placeholder="Enter listing title"
-                  className={`mt-1 block w-full border ${
-                    errors.title ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("title")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  id="itemName"
-                  placeholder="Enter item name"
-                  className={`mt-1 block w-full border ${
-                    errors.itemName ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("itemName")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="itemDescription" className="block text-sm font-medium text-gray-700">
-                  Item Description
-                </label>
-                <textarea
-                  id="itemDescription"
-                  rows={3}
-                  placeholder="Enter item description"
-                  className={`mt-1 block w-full border ${
-                    errors.itemDescription ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("itemDescription")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="itemPrice" className="block text-sm font-medium text-gray-700">
-                  Price
-                </label>
-                <input
-                  type="number"
-                  id="itemPrice"
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter price"
-                  className={`mt-1 block w-full border ${
-                    errors.itemPrice ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                />
-                {renderError("itemPrice")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="subCategory" className="block text-sm font-medium text-gray-700">
-                  Sub Category
-                </label>
-                <select
-                  id="subCategory"
-                  className={`mt-1 block w-full border ${
-                    errors.subCategory ? "border-red-500" : "border-gray-300"
-                  } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
-                >
-                  <option value="FURNITURE">Furniture</option>
-                  <option value="ELECTRONICS">Electronics</option>
-                  <option value="KITCHEN">Kitchen</option>
-                  <option value="BOOKS">Books</option>
-                  <option value="OTHER">Other</option>
-                </select>
-                {renderError("subCategory")}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="uploadImagesSell" className="block text-sm font-medium text-gray-700">
-                  Upload Images
-                </label>
-                <input
-                  type="file"
-                  id="uploadImagesSell"
-                  multiple
-                  accept="image/*"
-                  className="mt-1 block w-full text-sm text-gray-500"
-                />
-              </div>
-            </>
-          )}
+    {/* Drop-off Location */}
+    <div className="mb-4">
+      <label htmlFor="dropoffLocation" className="block text-sm font-medium text-gray-700">
+        Drop-off Location
+      </label>
+      <input
+        type="text"
+        id="dropoffLocation"
+        placeholder="Enter drop-off location"
+        className={`mt-1 block w-full border ${
+          errors.dropoffLocation ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+      />
+      {renderError("dropoffLocation")}
+    </div>
+
+    {/* Ride Date */}
+    <div className="mb-4">
+      <label htmlFor="rideDate" className="block text-sm font-medium text-gray-700">
+        Ride Date
+      </label>
+      <input 
+        type="date" 
+        id="rideDate"
+        value={rideDate}
+        min={new Date().toISOString().split("T")[0]} 
+        onChange={(e) => setRideDate(e.target.value)}
+        className={`mt-1 block w-full border ${
+          errors.rideDate ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
+      />
+      {renderError("rideDate")}
+    </div>
+
+    {/* Ride Time */}
+    <div className="mb-4">
+      <label htmlFor="rideTime" className="block text-sm font-medium text-gray-700">
+        Ride Time
+      </label>
+      <input 
+        type="time" 
+        id="rideTime"
+        value={rideTime}
+        onChange={(e) => setRideTime(e.target.value)}
+        min={
+          rideDate === new Date().toISOString().split("T")[0]
+            ? new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })
+            : undefined
+        }
+        className={`mt-1 block w-full border ${
+          errors.rideTime ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
+      />
+      {renderError("rideTime")}
+    </div>
+
+    {/* Available Seats */}
+    <div className="mb-4">
+      <label htmlFor="availableSeats" className="block text-sm font-medium text-gray-700">
+        Available Seats
+      </label>
+      <input 
+        type="number" 
+        id="availableSeats" 
+        min="1" 
+        defaultValue="1" 
+        className={`mt-1 block w-full border ${
+          errors.availableSeats ? "border-red-500" : "border-gray-300"
+        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`} 
+      />
+      {renderError("availableSeats")}
+    </div>
+  </>
+)}
 
           <button
             type="submit"
-            className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700"
+            className="mt-4 w-full bg-[#f76902] text-white py-2 px-4 rounded-md hover:bg-[#db5d00]"
           >
             Submit
           </button>
