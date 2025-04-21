@@ -1,11 +1,11 @@
 resource "aws_s3_bucket" "website_bucket" {
-  bucket        = "${var.website_bucket_name}-${var.app_environment}"
+  bucket        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
   force_destroy = true
 
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.website_bucket_name}-${var.app_environment}",
+      "Name"        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}",
       "Environment" = var.app_environment,
     }
   )
@@ -33,13 +33,13 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_s3_bucket" "images_bucket" {
-  bucket        = "${var.images_bucket_name}-${var.app_environment}"
+  bucket        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
   force_destroy = true # Allows deletion of the bucket even if it contains objects
 
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.images_bucket_name}-${var.app_environment}",
+      "Name"        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}",
       "Environment" = var.app_environment,
     }
   )
