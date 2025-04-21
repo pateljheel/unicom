@@ -227,3 +227,54 @@ resource "aws_ecs_service" "app_service" {
     }
   )
 }
+
+#-------------------------------------------------------------
+# 1) Define AppAutoScaling Target for your ECS Service
+#-------------------------------------------------------------
+resource "aws_appautoscaling_target" "ecs_service" {
+  service_namespace  = "ecs"
+  scalable_dimension = "ecs:service:DesiredCount"
+  resource_id        = "service/${aws_ecs_cluster.app_cluster.name}/${aws_ecs_service.app_service.name}"
+
+  # scale between 1 and 4 tasks
+  min_capacity = 1
+  max_capacity = 4
+}
+
+#-------------------------------------------------------------
+# 2) CPU‑based Target Tracking Scaling Policy
+#-------------------------------------------------------------
+resource "aws_appautoscaling_policy" "cpu_target_tracking" {
+  name               = "${var.app_name}-${var.app_environment}-cpu-autoscale"
+  service_namespace  = aws_appautoscaling_target.ecs_service.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_service.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_service.scalable_dimension
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+  }
+}
+
+resource "aws_appautoscaling_policy" "memory_target_tracking" {
+  name               = "${var.app_name}-${var.app_environment}-memory-autoscale"
+  service_namespace  = aws_appautoscaling_target.ecs_service.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_service.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_service.scalable_dimension
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    # aim to keep average memory ~75% across tasks
+    target_value       = 75.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+  }
+}
