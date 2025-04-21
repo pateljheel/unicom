@@ -61,13 +61,13 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   # ─── Origins ────────────────────────────────────────────────────────────────
   origin {
     domain_name              = aws_s3_bucket.images_bucket.bucket_regional_domain_name
-    origin_id                = var.s3_images_origin_id
+    origin_id                = "${var.app_name}-${var.app_environment}-s3-images-origin-${random_id.app_id.hex}"
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
   }
 
   origin {
     domain_name = aws_s3_bucket_website_configuration.website_config.website_endpoint
-    origin_id   = var.s3_website_origin_id
+    origin_id   = "${var.app_name}-${var.app_environment}-s3-website-origin-${random_id.app_id.hex}"
 
     custom_origin_config {
       http_port                = 80
@@ -81,7 +81,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   # ─── Default Cache Behavior ─────────────────────────────────────────────────
   default_cache_behavior {
-    target_origin_id       = var.s3_website_origin_id
+    target_origin_id       = "${var.app_name}-${var.app_environment}-s3-website-origin-${random_id.app_id.hex}"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     viewer_protocol_policy = "redirect-to-https"
@@ -109,7 +109,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   # ─── Additional Cache Behavior ───────────────────────────────────────────────
   ordered_cache_behavior {
     path_pattern           = "/published/**"
-    target_origin_id       = var.s3_images_origin_id
+    target_origin_id       = "${var.app_name}-${var.app_environment}-s3-images-origin-${random_id.app_id.hex}"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     viewer_protocol_policy = "redirect-to-https"

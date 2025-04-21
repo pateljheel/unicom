@@ -82,27 +82,7 @@ variable "db_skip_final_snapshot" {
   default     = true
 }
 
-
-# s3 variables
-variable "website_bucket_name" {
-  description = "S3 bucket name"
-  type        = string
-}
-
-variable "images_bucket_name" {
-  description = "S3 bucket name for images"
-  type        = string
-}
-
 # cloudfront variables
-variable "s3_images_origin_id" {
-  description = "Origin ID for S3 bucket in CloudFront"
-  type        = string
-}
-variable "s3_website_origin_id" {
-  description = "Origin ID for S3 bucket in CloudFront"
-  type        = string
-}
 variable "s3_distribution_price_class" {
   description = "Price class for CloudFront distribution"
   type        = string
