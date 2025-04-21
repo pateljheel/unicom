@@ -13,10 +13,8 @@ resource "aws_ecs_cluster" "app_cluster" {
   )
 }
 
-#-------------------------------------------------------------
-# Security Group for ECS Tasks
-#-------------------------------------------------------------
-resource "aws_security_group" "asg_sg" {
+# Security group for ECS
+resource "aws_security_group" "ecs_sg" {
   name        = "${var.app_name}-${var.app_environment}-asg-sg"
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
@@ -36,7 +34,7 @@ resource "aws_security_group_rule" "asg_allow_all_outbound" {
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
-  security_group_id = aws_security_group.asg_sg.id
+  security_group_id = aws_security_group.ecs_sg.id
   cidr_blocks       = ["0.0.0.0/0"]
   description       = "Allow all outbound"
 }
@@ -47,7 +45,7 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   protocol                 = "tcp"
   from_port                = 8080
   to_port                  = 8080
-  security_group_id        = aws_security_group.asg_sg.id
+  security_group_id        = aws_security_group.ecs_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
   description              = "Allow HTTP from internal load balancer"
 }
@@ -214,7 +212,7 @@ resource "aws_ecs_service" "app_service" {
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
     assign_public_ip = false
-    security_groups  = [aws_security_group.asg_sg.id]
+    security_groups  = [aws_security_group.ecs_sg.id]
   }
 
   load_balancer {
@@ -266,5 +264,56 @@ resource "aws_appautoscaling_policy" "cpu_target_tracking" {
     target_value       = 60.0
     scale_in_cooldown  = 300
     scale_out_cooldown = 200
+  }
+}
+
+#-------------------------------------------------------------
+# 1) Define AppAutoScaling Target for your ECS Service
+#-------------------------------------------------------------
+resource "aws_appautoscaling_target" "ecs_service" {
+  service_namespace  = "ecs"
+  scalable_dimension = "ecs:service:DesiredCount"
+  resource_id        = "service/${aws_ecs_cluster.app_cluster.name}/${aws_ecs_service.app_service.name}"
+
+  # scale between 1 and 4 tasks
+  min_capacity = 1
+  max_capacity = 4
+}
+
+#-------------------------------------------------------------
+# 2) CPU‑based Target Tracking Scaling Policy
+#-------------------------------------------------------------
+resource "aws_appautoscaling_policy" "cpu_target_tracking" {
+  name               = "${var.app_name}-${var.app_environment}-cpu-autoscale"
+  service_namespace  = aws_appautoscaling_target.ecs_service.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_service.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_service.scalable_dimension
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+  }
+}
+
+resource "aws_appautoscaling_policy" "memory_target_tracking" {
+  name               = "${var.app_name}-${var.app_environment}-memory-autoscale"
+  service_namespace  = aws_appautoscaling_target.ecs_service.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_service.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_service.scalable_dimension
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    # aim to keep average memory ~75% across tasks
+    target_value       = 75.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
   }
 }

@@ -6,6 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 import { formatDateTimeUTC, formatDateUTC } from "@/lib/utils"
 
+// Default image mappings for each category
+const DEFAULT_IMAGES: Record<string, string> = {
+  SELL: "sell.png",
+  ROOMMATE: "Roommate.png",
+  CARPOOL: "carpool.png",
+};
+
 interface Post {
   _id: string;
   title: string;
@@ -21,6 +28,7 @@ interface Post {
   rent?: number;
   start_date?: string;
   gender_preference?: string;
+  preferences?: string[]; // Added for tags like "Non-smoker"
   // Carpool-specific fields
   from_location?: string;
   to_location?: string;
@@ -51,6 +59,14 @@ export default function MyPostsPage() {
   const { signedUrlData } = useAuth();
   const CLOUDFRONT_HOST = infra_config.cloudfront_url;
   const API_URL = infra_config.api_url;
+
+  // Helper function to get the image URL
+  const getPostImage = (post: Post): string => {
+    if (post.image_url && post.image_url.length > 0) {
+      return post.image_url[0];
+    }
+    return DEFAULT_IMAGES[post.category] || "/images/default_placeholder.jpg";
+  };
 
   function buildSignedImageUrl(baseImageUrl: string, signedUrlData: any): string {
     const url = new URL(baseImageUrl);
@@ -241,45 +257,48 @@ export default function MyPostsPage() {
   };
 
   const handleUpdatePostStatus = async (postId: string, newStatus: string) => {
-    try {
-      const idToken = localStorage.getItem("id_token");
-      if (!idToken) {
-        console.error("No ID token found");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}api/posts/${postId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to update post status", response.status);
-        return;
-      }
-
-      setPosts(
-        posts.map((post) =>
-          post._id === postId ? { ...post, status: newStatus } : post
-        )
-      );
-      setSearchResults(
-        searchResults.map((post) =>
-          post._id === postId ? { ...post, status: newStatus } : post
-        )
-      );
-
-      if (selectedPost && selectedPost._id === postId) {
-        setSelectedPost({ ...selectedPost, status: newStatus });
-      }
-    } catch (error) {
-      console.error("Error updating post status:", error);
+  try {
+    const idToken = localStorage.getItem("id_token");
+    if (!idToken) {
+      console.error("No ID token found");
+      return;
     }
-  };
+
+    const response = await fetch(`${API_URL}api/posts/${postId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to update post status", response.status);
+      return;
+    }
+
+    setPosts(
+      posts.map((post) =>
+        post._id === postId ? { ...post, status: newStatus } : post
+      )
+    );
+    setSearchResults(
+      searchResults.map((post) =>
+        post._id === postId ? { ...post, status: newStatus } : post
+      )
+    );
+
+    // Fix: Use selectedPost instead of post
+    if (selectedPost && selectedPost._id === postId) {
+      setSelectedPost({ ...selectedPost, status: newStatus });
+    }
+  } catch (error) {
+    console.error("Error updating post status:", error);
+  }
+};
+
+  
 
   useEffect(() => {
     if (!signedUrlData) return;
@@ -436,52 +455,61 @@ export default function MyPostsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {displayPosts.map((post) => {
             const userInfo = userInfoCache[post.owner];
+            const imageUrl = getPostImage(post);
 
             return (
               <div
                 key={post._id}
-                className="border rounded-md overflow-hidden shadow-sm bg-white cursor-pointer hover:shadow-md transition relative"
+                className={`border rounded-md overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition relative ${
+                  post.status === "FAILED" ? "bg-red-300" : "bg-white"
+                }`}
               >
                 <div
                   className="h-48 w-full bg-gray-200"
                   onClick={() => setSelectedPost(post)}
                 >
-                  {post.image_url && post.image_url.length > 0 ? (
-                    <img
-                      src={post.image_url[0]}
-                      alt={post.title}
-                      className="object-cover h-full w-full"
-                    />
-                  ) : (
-                    <div className="flex justify-center items-center h-full text-gray-500">
-                      No Image
-                    </div>
-                  )}
+                  <img
+                    src={imageUrl}
+                    alt={post.title}
+                    className="object-cover h-full w-full"
+                    onError={(e) => (e.currentTarget.src = "/images/default_placeholder.jpg")}
+                  />
                 </div>
                 <div className="p-4">
-                  <h3 className="text-lg font-bold">{post.title}</h3>
-                  <p className="text-sm text-gray-500 mb-1">{post.category}</p>
-                  <p className="text-sm text-gray-500 mb-1">Status: {post.status}</p>
+                  {/* Title and Category */}
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-bold">{post.title}</h3>
+                    <span className="text-xs uppercase bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                      {post.category}
+                    </span>
+                  </div>
+
+                  {/* Status */}
+                  <p className="text-sm text-gray-500 mb-2">Status: {post.status}</p>
 
                   {/* Category-specific details */}
                   {post.category === "SELL" && (
-                    <>
-                      {post.item && <p className="text-gray-700">Item: {post.item}</p>}
+                    <div className="text-gray-700 space-y-1">
+                      {post.item && <p>Item: {post.item}</p>}
                       {post.price !== undefined && (
-                        <p className="text-green-700 font-semibold">${post.price}</p>
+                        <p className="text-green-700 font-semibold text-lg">
+                          ${post.price}
+                        </p>
                       )}
                       {post.sub_category && (
-                        <p className="text-gray-700">Subcategory: {post.sub_category}</p>
+                        <p>Subcategory: {post.sub_category}</p>
                       )}
-                    </>
+                    </div>
                   )}
                   {post.category === "ROOMMATE" && (
-                    <>
+                    <div className="text-gray-700 space-y-1">
                       {post.community && (
-                        <p className="text-gray-700">Community: {post.community}</p>
+                        <p>Community: {post.community}</p>
                       )}
                       {post.rent !== undefined && (
-                        <p className="text-green-700 font-semibold">Rent: ${post.rent}</p>
+                        <p className="text-green-700 font-semibold text-lg">
+                          Rent: ${post.rent}
+                        </p>
                       )}
                       {post.start_date && (
                         <p className="text-gray-700">
@@ -489,19 +517,32 @@ export default function MyPostsPage() {
                         </p>
                       )}
                       {post.gender_preference && (
-                        <p className="text-gray-700">
+                        <p>
                           Gender Preference: {post.gender_preference}
                         </p>
                       )}
-                    </>
+                      {/* Preferences Tags */}
+                      {post.preferences && post.preferences.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {post.preferences.map((pref, idx) => (
+                            <span
+                              key={idx}
+                              className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded"
+                            >
+                              {pref}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                   {post.category === "CARPOOL" && (
-                    <>
+                    <div className="text-gray-700 space-y-1">
                       {post.from_location && (
-                        <p className="text-gray-700">From: {post.from_location}</p>
+                        <p>From: {post.from_location}</p>
                       )}
                       {post.to_location && (
-                        <p className="text-gray-700">To: {post.to_location}</p>
+                        <p>To: {post.to_location}</p>
                       )}
                       {post.departure_time && (
                         <p className="text-gray-700">
@@ -509,30 +550,32 @@ export default function MyPostsPage() {
                         </p>
                       )}
                       {post.seats_available !== undefined && (
-                        <p className="text-gray-700">
+                        <p>
                           Seats Available: {post.seats_available}
                         </p>
                       )}
-                    </>
-                  )}
-
-                  <p className="text-xs text-gray-400 mt-2">
-                    Posted by{" "}
-                    <a
-                      href={`mailto:${post.owner}`}
-                      className="text-blue-500 hover:underline"
-                    >
-                      {post.owner}
-                    </a>
-                  </p>
-
-                  {userInfo && (
-                    <div className="text-xs text-gray-500 mt-2 space-y-1">
-                      <div><strong>Name:</strong> {userInfo.name || "N/A"}</div>
-                      <div><strong>College:</strong> {userInfo.college || "N/A"}</div>
-                      <div><strong>Department:</strong> {userInfo.department || "N/A"}</div>
                     </div>
                   )}
+
+                  {/* Posted By and User Info */}
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500">
+                      Posted by{" "}
+                      <a
+                        href={`mailto:${post.owner}`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        {post.owner}
+                      </a>
+                    </p>
+                    {userInfo && (
+                      <div className="text-sm text-gray-600 mt-1 space-y-1">
+                        <p><strong>Name:</strong> {userInfo.name || "N/A"}</p>
+                        <p><strong>College:</strong> {userInfo.college || "N/A"}</p>
+                        <p><strong>Department:</strong> {userInfo.department || "N/A"}</p>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Post Management Buttons */}
                   <div className="mt-4 flex gap-2">
@@ -611,18 +654,20 @@ export default function MyPostsPage() {
               <p className="text-gray-600 mb-4">{selectedPost.category}</p>
               <p className="text-gray-600 mb-4">Status: {selectedPost.status}</p>
 
-              {selectedPost.image_url && selectedPost.image_url.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                  {selectedPost.image_url.map((url, idx) => (
-                    <img
-                      key={idx}
-                      src={url}
-                      alt={`Image ${idx + 1}`}
-                      className="w-100 h-100 object-cover rounded-md shadow-md"
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-wrap justify-center gap-4 mt-4">
+                {(selectedPost.image_url && selectedPost.image_url.length > 0
+                  ? selectedPost.image_url
+                  : [DEFAULT_IMAGES[selectedPost.category] || "/images/default_placeholder.jpg"]
+                ).map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`Image for ${selectedPost.title}`}
+                    className="w-full max-w-xs h-64 object-cover rounded-md shadow-md"
+                    onError={(e) => (e.currentTarget.src = "/images/default_placeholder.jpg")}
+                  />
+                ))}
+              </div>
 
               {/* Category-specific details */}
               {selectedPost.category === "SELL" && (
@@ -658,6 +703,18 @@ export default function MyPostsPage() {
                     <p>
                       <strong>Gender Preference:</strong> {selectedPost.gender_preference}
                     </p>
+                  )}
+                  {selectedPost.preferences && selectedPost.preferences.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedPost.preferences.map((pref, idx) => (
+                        <span
+                          key={idx}
+                          className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded"
+                        >
+                          {pref}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
