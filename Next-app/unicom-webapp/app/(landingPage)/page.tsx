@@ -91,11 +91,11 @@ export default function Home() {
         {/* IMAGE CARD */}
         <div className="flex-1 flex items-center justify-center">
           <div
-            className="relative w-full max-w-sm h-64 sm:h-80 lg:h-[540px] rounded-2xl overflow-hidden transform transition-all duration-500 hover:rotate-[-3deg] hover:scale-105 shadow-[0_30px_60px_-10px_rgba(0,0,0,0.4)]"
+            className="relative w-full max-w-sm h-64 sm:h-80 lg:h-[560px] rounded-2xl overflow-hidden transform transition-all duration-500 hover:rotate-[-3deg] hover:scale-105 shadow-[0_30px_60px_-10px_rgba(0,0,0,0.4)]"
             style={{ perspective: "1000px" }}
           >
             <Image
-              src="/landing.png"
+              src="/Tigers2.png"
               alt="Students using UniCom"
               fill
               priority

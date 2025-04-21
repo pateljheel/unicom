@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-{"api_url":"https://bl77nbnru7.execute-api.us-east-1.amazonaws.com/","base_url":"https://dovw35iq6t17e.cloudfront.net/","cloudfront_url":"https://dovw35iq6t17e.cloudfront.net/","cognito_login_url":"https://unicom-stg-70a4.auth.us-east-1.amazoncognito.com/login?client_id=5b4ntkfp1la5f77lm7vafalca7\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=https://dovw35iq6t17e.cloudfront.net","cognito_logout_url":"https://unicom-stg-70a4.auth.us-east-1.amazoncognito.com/logout?client_id=5b4ntkfp1la5f77lm7vafalca7\u0026logout_uri=https://dovw35iq6t17e.cloudfront.net","post_images_url":"https://dovw35iq6t17e.cloudfront.net/published/"}
-=======
 {
-    "api_url": "https://tabx2h4doc.execute-api.us-east-1.amazonaws.com/",
-    "base_url": "https://d3mct7o8c9ydej.cloudfront.net/",
-    "cloudfront_url": "https://d3mct7o8c9ydej.cloudfront.net/",
-    "cognito_login_url": "https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/login?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=https://d3mct7o8c9ydej.cloudfront.net",
-    "cognito_logout_url": "https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/logout?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026logout_uri=https://d3mct7o8c9ydej.cloudfront.net",
-    "post_images_url": "https://d3mct7o8c9ydej.cloudfront.net/published/"
+    "api_url": "https://bl77nbnru7.execute-api.us-east-1.amazonaws.com/",
+    "base_url": "http://localhost:3000/",
+    "cloudfront_url": "https://dovw35iq6t17e.cloudfront.net/",
+    "cognito_login_url": "https://unicom-stg-70a4.auth.us-east-1.amazoncognito.com/login?client_id=5b4ntkfp1la5f77lm7vafalca7\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=http://localhost:3000/",
+    "cognito_logout_url": "https://unicom-stg-70a4.auth.us-east-1.amazoncognito.com/logout?client_id=5b4ntkfp1la5f77lm7vafalca7\u0026logout_uri=http://localhost:3000/",
+    "post_images_url": "https://dovw35iq6t17e.cloudfront.net/published/"
 }
->>>>>>> 88ceab55725bc662d571e2a42df41308c4580b0c
