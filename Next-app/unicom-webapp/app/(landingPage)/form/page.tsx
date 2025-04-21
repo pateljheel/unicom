@@ -220,9 +220,8 @@ export default function ListingForm() {
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={`mt-1 block w-full border ${
-                errors.category ? "border-red-500" : "border-gray-300"
-              } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+              className={`mt-1 block w-full border ${errors.category ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
             >
               <option value="">Select a category</option>
               <option value="ROOMMATE">Roommate Finder</option>
@@ -246,9 +245,8 @@ export default function ListingForm() {
                     <textarea
                       id="description"
                       rows={3}
-                      className={`mt-1 block w-full border ${
-                        errors.description ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+                      className={`mt-1 block w-full border ${errors.description ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
                     />
                     {renderError("description")}
                   </div>
@@ -261,9 +259,8 @@ export default function ListingForm() {
                     <input
                       type="text"
                       id="apartmentName"
-                      className={`mt-1 block w-full border ${
-                        errors.apartmentName ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+                      className={`mt-1 block w-full border ${errors.apartmentName ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
                     />
                     {renderError("apartmentName")}
                   </div>
@@ -277,9 +274,8 @@ export default function ListingForm() {
                       type="date"
                       id="dateAvailability"
                       min={new Date().toISOString().split("T")[0]}
-                      className={`mt-1 block w-full border ${
-                        errors.dateAvailability ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+                      className={`mt-1 block w-full border ${errors.dateAvailability ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
                     />
                     {renderError("dateAvailability")}
                   </div>
@@ -294,9 +290,8 @@ export default function ListingForm() {
                       id="rent"
                       min="0"
                       step="0.01"
-                      className={`mt-1 block w-full border ${
-                        errors.rent ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+                      className={`mt-1 block w-full border ${errors.rent ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
                     />
                     {renderError("rent")}
                   </div>
@@ -305,16 +300,15 @@ export default function ListingForm() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Preferences</label>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {["Non-smoker","Pet-friendly","Cooking-enthusiast"].map((pref) => (
+                      {["Non-smoker", "Pet-friendly", "Cooking-enthusiast"].map((pref) => (
                         <button
                           key={pref}
                           type="button"
                           onClick={() => handlePreferenceToggle(pref)}
-                          className={`px-3 py-1 rounded-full border ${
-                            selectedPreferences.includes(pref)
-                              ? "bg-[#f76902] text-white"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
+                          className={`px-3 py-1 rounded-full border ${selectedPreferences.includes(pref)
+                            ? "bg-[#f76902] text-white"
+                            : "bg-gray-100 text-gray-700"
+                            }`}
                         >
                           {pref}
                         </button>
@@ -359,9 +353,8 @@ export default function ListingForm() {
                     </label>
                     <select
                       id="genderPreference"
-                      className={`mt-1 block w-full border ${
-                        errors.genderPreference ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
+                      className={`mt-1 block w-full border ${errors.genderPreference ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-[#f76902] focus:ring-[#f76902]`}
                     >
                       <option value="ANY">Any</option>
                       <option value="MALE">Male</option>
@@ -376,10 +369,15 @@ export default function ListingForm() {
                     </label>
                     <input
                       type="file"
-                      id="uploadImagesRoommate"
+                      id="uploadImagesSell"
                       multiple
                       accept="image/*"
-                      className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                      className="mt-1 block w-full text-sm text-gray-700 
+                                file:mr-4 file:py-2.5 file:px-5 
+                                file:rounded-md file:border-0 
+                                file:bg-[#f8f8f9] file:text-[#333] 
+                                file:font-medium file:shadow-sm 
+                                hover:file:bg-[#eee]"
                     />
                   </div>
                 </>
@@ -393,9 +391,8 @@ export default function ListingForm() {
                       type="text"
                       id="pickupLocation"
                       placeholder="Enter pickup location"
-                      className={`mt-1 block w-full border ${
-                        errors.pickupLocation ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.pickupLocation ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("pickupLocation")}
                   </div>
@@ -406,9 +403,8 @@ export default function ListingForm() {
                       type="text"
                       id="dropoffLocation"
                       placeholder="Enter drop-off location"
-                      className={`mt-1 block w-full border ${
-                        errors.dropoffLocation ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.dropoffLocation ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("dropoffLocation")}
                   </div>
@@ -421,9 +417,8 @@ export default function ListingForm() {
                       value={rideDate}
                       min={new Date().toISOString().split("T")[0]}
                       onChange={(e) => setRideDate(e.target.value)}
-                      className={`mt-1 block w-full border ${
-                        errors.rideDate ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
+                      className={`mt-1 block w-full border ${errors.rideDate ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
                     />
                     {renderError("rideDate")}
                   </div>
@@ -440,9 +435,8 @@ export default function ListingForm() {
                           ? new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })
                           : undefined
                       }
-                      className={`mt-1 block w-full border ${
-                        errors.rideTime ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
+                      className={`mt-1 block w-full border ${errors.rideTime ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
                     />
                     {renderError("rideTime")}
                   </div>
@@ -454,9 +448,8 @@ export default function ListingForm() {
                       id="availableSeats"
                       min="1"
                       defaultValue="1"
-                      className={`mt-1 block w-full border ${
-                        errors.availableSeats ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
+                      className={`mt-1 block w-full border ${errors.availableSeats ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500`}
                     />
                     {renderError("availableSeats")}
                   </div>
@@ -471,9 +464,8 @@ export default function ListingForm() {
                       type="text"
                       id="title"
                       placeholder="Enter listing title"
-                      className={`mt-1 block w-full border ${
-                        errors.title ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.title ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("title")}
                   </div>
@@ -484,9 +476,8 @@ export default function ListingForm() {
                       type="text"
                       id="itemName"
                       placeholder="Enter item name"
-                      className={`mt-1 block w-full border ${
-                        errors.itemName ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus;border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.itemName ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus;border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("itemName")}
                   </div>
@@ -497,9 +488,8 @@ export default function ListingForm() {
                       id="itemDescription"
                       rows={3}
                       placeholder="Enter item description"
-                      className={`mt-1 block w-full border ${
-                        errors.itemDescription ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.itemDescription ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("itemDescription")}
                   </div>
@@ -512,9 +502,8 @@ export default function ListingForm() {
                       min="0"
                       step="0.01"
                       placeholder="Enter price"
-                      className={`mt-1 block w-full border ${
-                        errors.itemPrice ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus;border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.itemPrice ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus;border-indigo-500 focus:ring-indigo-500 p-2`}
                     />
                     {renderError("itemPrice")}
                   </div>
@@ -523,9 +512,8 @@ export default function ListingForm() {
                     <label htmlFor="subCategory" className="block text-sm font-medium text-gray-700">Sub Category</label>
                     <select
                       id="subCategory"
-                      className={`mt-1 block w-full border ${
-                        errors.subCategory ? "border-red-500" : "border-gray-300"
-                      } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
+                      className={`mt-1 block w-full border ${errors.subCategory ? "border-red-500" : "border-gray-300"
+                        } rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2`}
                     >
                       <option value="FURNITURE">Furniture</option>
                       <option value="ELECTRONICS">Electronics</option>
@@ -543,7 +531,12 @@ export default function ListingForm() {
                       id="uploadImagesSell"
                       multiple
                       accept="image/*"
-                      className="mt-1 block w-full text-sm text-gray-700"
+                      className="mt-1 block w-full text-sm text-gray-700 
+                                file:mr-4 file:py-2.5 file:px-5 
+                                file:rounded-md file:border-0 
+                                file:bg-[#f8f8f9] file:text-[#333] 
+                                file:font-medium file:shadow-sm 
+                                hover:file:bg-[#eee]"
                     />
                   </div>
                 </>

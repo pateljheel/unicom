@@ -520,7 +520,9 @@ export default function MyFeedPage() {
                     <p className="text-xs text-gray-500">
                       Posted by{" "}
                       <a
-                        href={`mailto:${post.owner}`}
+                        href={`https://contacts.google.com/${encodeURIComponent(post.owner)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                       >
                         {post.owner}
@@ -702,7 +704,9 @@ export default function MyFeedPage() {
               <p className="text-gray-500 mt-2">
                 Posted by:{" "}
                 <a
-                  href={`mailto:${selectedPost.owner}`}
+                  href={`https://contacts.google.com/${encodeURIComponent(selectedPost.owner)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-500 hover:underline"
                 >
                   {selectedPost.owner}

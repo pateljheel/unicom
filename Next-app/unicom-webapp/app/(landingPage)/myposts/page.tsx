@@ -562,8 +562,10 @@ export default function MyPostsPage() {
                     <p className="text-sm text-gray-500">
                       Posted by{" "}
                       <a
-                        href={`mailto:${post.owner}`}
-                        className="text-blue-500 hover:underline"
+                        href={`https://contacts.google.com/${encodeURIComponent(post.owner)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
                       >
                         {post.owner}
                       </a>
@@ -743,7 +745,9 @@ export default function MyPostsPage() {
               <p className="text-gray-500 mt-2">
                 Posted by:{" "}
                 <a
-                  href={`mailto:${selectedPost.owner}`}
+                  href={`https://contacts.google.com/${encodeURIComponent(selectedPost.owner)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-500 hover:underline"
                 >
                   {selectedPost.owner}
