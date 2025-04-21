@@ -1,12 +1,14 @@
+#-------------------------------------------------------------
 # ECS Cluster
+#-------------------------------------------------------------
 resource "aws_ecs_cluster" "app_cluster" {
   name = "${var.app_name}-${var.app_environment}-ecs-cluster"
 
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.app_name}-${var.app_environment}-ecs-cluster",
-      "Environment" = var.app_environment,
+      Name        = "${var.app_name}-${var.app_environment}-ecs-cluster"
+      Environment = var.app_environment
     }
   )
 }
@@ -14,14 +16,14 @@ resource "aws_ecs_cluster" "app_cluster" {
 # Security group for ECS
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.app_name}-${var.app_environment}-asg-sg"
-  description = "Security group for ASG"
+  description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
 
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.app_name}-${var.app_environment}-asg-sg",
-      "Environment" = var.app_environment,
+      Name        = "${var.app_name}-${var.app_environment}-asg-sg"
+      Environment = var.app_environment
     }
   )
 }
@@ -45,24 +47,22 @@ resource "aws_security_group_rule" "allow_http_from_lb" {
   to_port                  = 8080
   security_group_id        = aws_security_group.ecs_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
-
-  description = "Allow HTTP from internal load balancer"
+  description              = "Allow HTTP from internal load balancer"
 }
 
+#-------------------------------------------------------------
+# IAM Role for Fargate Tasks
+#-------------------------------------------------------------
 resource "aws_iam_role" "asg_instance_role" {
   name = "${var.app_name}-${var.app_environment}-asg-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
-      }
-    ]
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
   })
 
   tags = {
@@ -90,6 +90,9 @@ resource "aws_iam_role_policy_attachment" "ecs_cloudwatch_logging" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+#-------------------------------------------------------------
+# CloudWatch Log Group
+#-------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "ecs_app_log_group" {
   name              = "/ecs/${var.app_name}-${var.app_environment}"
   retention_in_days = 1
@@ -100,6 +103,9 @@ resource "aws_cloudwatch_log_group" "ecs_app_log_group" {
   }
 }
 
+#-------------------------------------------------------------
+# ECS Task Definition
+#-------------------------------------------------------------
 resource "aws_ecs_task_definition" "app_task" {
   family                   = "${var.app_name}-${var.app_environment}-task"
   network_mode             = "awsvpc"
@@ -114,12 +120,10 @@ resource "aws_ecs_task_definition" "app_task" {
       name      = "app-container"
       image     = var.api_container_image
       essential = true
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-        }
-      ]
+      portMappings = [{
+        containerPort = 8080
+        hostPort      = 8080
+      }]
       environment = [
         { name = "AWS_REGION", value = var.app_region },
         { name = "AWS_DEFAULT_REGION", value = var.app_region },
@@ -166,14 +170,17 @@ resource "aws_ecs_task_definition" "app_task" {
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.app_name}-${var.app_environment}-task",
-      "Environment" = var.app_environment,
+      Name        = "${var.app_name}-${var.app_environment}-task"
+      Environment = var.app_environment
     }
   )
 
   depends_on = [aws_cloudwatch_log_group.ecs_app_log_group]
 }
 
+#-------------------------------------------------------------
+# Application Load Balancer Target Group
+#-------------------------------------------------------------
 resource "aws_lb_target_group" "app_tg" {
   name        = "${var.app_name}-${var.app_environment}-tg"
   port        = 8080
@@ -196,12 +203,18 @@ resource "aws_lb_target_group" "app_tg" {
   }
 }
 
+#-------------------------------------------------------------
+# ECS Service
+#-------------------------------------------------------------
 resource "aws_ecs_service" "app_service" {
   name            = "${var.app_name}-${var.app_environment}-service"
   cluster         = aws_ecs_cluster.app_cluster.id
   task_definition = aws_ecs_task_definition.app_task.arn
   launch_type     = "FARGATE"
   desired_count   = 1
+
+  enable_execute_command = true
+
 
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
@@ -222,8 +235,8 @@ resource "aws_ecs_service" "app_service" {
   tags = merge(
     var.additional_tags,
     {
-      "Name"        = "${var.app_name}-${var.app_environment}-service",
-      "Environment" = var.app_environment,
+      Name        = "${var.app_name}-${var.app_environment}-service"
+      Environment = var.app_environment
     }
   )
 }

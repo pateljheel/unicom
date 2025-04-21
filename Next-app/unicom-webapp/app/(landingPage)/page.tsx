@@ -26,7 +26,7 @@ export default function Home() {
             </Button>
             <Button
               size="lg"
-              variant="outline"
+              variant="primaryOutline"
               className="border-[#f4600c] text-[#f4600c] hover:bg-orange-50 font-semibold"
             >
               <Link href="/features" className="w-full h-full flex items-center justify-center">
