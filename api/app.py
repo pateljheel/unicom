@@ -2,13 +2,13 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from pymongo import MongoClient
-from controllers import routes  # Import routes after app is initialized
 from flasgger import Swagger
 
 # Load environment variables
 load_dotenv()
 
-OPENAI_EMBEDDING_DIMENSIONS = int(os.getenv("OPENAI_EMBEDDING_DIMENSIONS", 1536))  # Default to 1536 if not set
+from utils import EMBEDDINGS_DIMENSIONS
+from controllers import routes
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -78,7 +78,7 @@ def ensure_description_vector_index():
             vectorOptions= {
                 "type": "hnsw", #You can choose HNSW index as well. With HNSW, you will have to remove "lists" parameter and use "m" and "efConstruction".
                 "similarity": "cosine",
-                "dimensions": OPENAI_EMBEDDING_DIMENSIONS,
+                "dimensions": EMBEDDINGS_DIMENSIONS,
                 "m": 16,
                 "efConstruction": 200},
             name="description_vector_hnsw")

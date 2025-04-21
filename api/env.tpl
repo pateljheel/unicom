@@ -17,4 +17,5 @@ S3_BUCKET_NAME=${s3_bucket_name}
 CLOUDFRONT_URL=${cloudfront_url}
 CLOUDFRONT_KEY_PAIR_ID=${cloudfront_key_pair_id}
 CLOUDFRONT_PRIVATE_KEY_PATH=${cloudfront_private_key_path}
-OPENAI_API_KEY=${openai_api_key}
+EMBEDDINGS_PROVIDER=${embeddings_provider}
+EMBEDDINGS_API_KEY=${embeddings_api_key}

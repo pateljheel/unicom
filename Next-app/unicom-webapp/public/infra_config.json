@@ -1,8 +1,1 @@
-{
-    "api_url": "https://tabx2h4doc.execute-api.us-east-1.amazonaws.com/",
-    "base_url": "https://d3mct7o8c9ydej.cloudfront.net/",
-    "cloudfront_url": "https://d3mct7o8c9ydej.cloudfront.net/",
-    "cognito_login_url": "https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/login?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=https://d3mct7o8c9ydej.cloudfront.net",
-    "cognito_logout_url": "https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/logout?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026logout_uri=https://d3mct7o8c9ydej.cloudfront.net",
-    "post_images_url": "https://d3mct7o8c9ydej.cloudfront.net/published/"
-}
+{"api_url":"https://tabx2h4doc.execute-api.us-east-1.amazonaws.com/","base_url":"https://d3mct7o8c9ydej.cloudfront.net/","cloudfront_url":"https://d3mct7o8c9ydej.cloudfront.net/","cognito_login_url":"https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/login?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026response_type=token\u0026scope=openid+email+profile\u0026redirect_uri=https://d3mct7o8c9ydej.cloudfront.net","cognito_logout_url":"https://unicom-stg-6045.auth.us-east-1.amazoncognito.com/logout?client_id=lbh4jg81evsmm66vq1v4qlui5\u0026logout_uri=https://d3mct7o8c9ydej.cloudfront.net","post_images_url":"https://d3mct7o8c9ydej.cloudfront.net/published/"}

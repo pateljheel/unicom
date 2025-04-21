@@ -1,9 +1,7 @@
 import os
-from openai import OpenAI
 import base64
 import numpy as np
 from models import *
-from typing import List
 from bson import ObjectId
 from threading import Thread
 from middlewares import jwt_required
@@ -13,6 +11,7 @@ from utils import process_image, process_text, store_image_in_s3
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+from utils import get_embeddings, EMBEDDINGS_DIMENSIONS
 import logging
 
 # Configure logging
@@ -25,20 +24,8 @@ CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
 PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH")
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-USE_OPENAI_EMBEDDING = bool(OPENAI_API_KEY)
-if USE_OPENAI_EMBEDDING:
-    client = OpenAI()
-OPENAI_EMBEDDING_MODEL = os.getenv(
-    "OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"
-)  # Default to ada model
-OPENAI_EMBEDDING_DIMENSIONS = int(
-    os.getenv("EMBEDDING_DIMENSIONS", 1536)
-)  # Default to 1536 if not set
-
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.80))
 TOP_K = int(os.getenv("TOP_K", 5))  # Default to 5 if not set
-
 
 @routes.route("/api/users", methods=["POST"])
 @jwt_required
@@ -215,11 +202,6 @@ def get_user(email):
     return jsonify(user), 200
 
 
-def get_openai_embedding(text: str) -> List[float]:
-    response = client.embeddings.create(model=OPENAI_EMBEDDING_MODEL, input=text)
-    return response.data[0].embedding
-
-
 def async_moderate_post(post_id, post_data, images, posts):
     try:
         # Step 1: Validate number of images
@@ -280,7 +262,7 @@ def async_moderate_post(post_id, post_data, images, posts):
 
         try:
             # Generate embedding and attach to the same document
-            embedding = get_openai_embedding(post_data["description"])
+            embedding = get_embeddings(post_data["description"])
             update_data["description_vector"] = embedding
         except Exception as e:
             logger.error(f"Embedding generation failed: {e}")
@@ -354,38 +336,38 @@ def create_post():
     }
     # Additional category-specific validation
     if post_category == PostCategory.ROOMMATE.value:
-      for field in ["community", "rent", "start_date"]:
-          if field not in data:
-              return (
-                  jsonify(
-                      {"error": f"{field} is required for category {post_category}"}
-                  ),
-                  400,
-              )
-      start_date_obj = datetime.fromisoformat(data["start_date"])
-      post_data.update(
-          {
-              "community": data["community"],
-              "rent": float(data["rent"]),
-              "start_date": start_date_obj,
-          }
-      )
-      formatted_start_date = start_date_obj.strftime("%B %d, %Y")
-      gender_preference = data.get("gender_preference")
-      if gender_preference not in [gender.value for gender in GenderPreference]:
-          gender_preference = GenderPreference.ANY.value
-      post_data["gender_preference"] = gender_preference
+        for field in ["community", "rent", "start_date"]:
+            if field not in data:
+                return (
+                    jsonify(
+                        {"error": f"{field} is required for category {post_category}"}
+                    ),
+                    400,
+                )
+        start_date_obj = datetime.fromisoformat(data["start_date"])
+        post_data.update(
+            {
+                "community": data["community"],
+                "rent": float(data["rent"]),
+                "start_date": start_date_obj,
+            }
+        )
+        formatted_start_date = start_date_obj.strftime("%B %d, %Y")
+        gender_preference = data.get("gender_preference")
+        if gender_preference not in [gender.value for gender in GenderPreference]:
+            gender_preference = GenderPreference.ANY.value
+        post_data["gender_preference"] = gender_preference
 
-      # Prepare preferences text
-      preferences = data.get("preferences", [])
-      post_data["preferences"] = preferences
-      preferences_str = ", ".join(preferences) if preferences else "None"
+        # Prepare preferences text
+        preferences = data.get("preferences", [])
+        post_data["preferences"] = preferences
+        preferences_str = ", ".join(preferences) if preferences else "None"
 
-      # Append to description
-      post_data["description"] = (
-          f"Community: {data['community']} | Preference: {gender_preference} | Preferences: {preferences_str}. "
-          f"Available from {formatted_start_date}. {data['description']}"
-      )
+        # Append to description
+        post_data["description"] = (
+            f"Community: {data['community']} | Preference: {gender_preference} | Preferences: {preferences_str}. "
+            f"Available from {formatted_start_date}. {data['description']}"
+        )
 
     elif post_category == PostCategory.SELL.value:
         for field in ["price", "item"]:
@@ -408,38 +390,40 @@ def create_post():
         post_data["sub_category"] = sub_category
 
     elif post_category == PostCategory.CARPOOL.value:
-      for field in ["from_location", "to_location", "departure_time"]:
-          if field not in data:
-              return (
-                  jsonify(
-                      {"error": f"{field} is required for category {post_category}"}
-                  ),
-                  400,
-              )
+        for field in ["from_location", "to_location", "departure_time"]:
+            if field not in data:
+                return (
+                    jsonify(
+                        {"error": f"{field} is required for category {post_category}"}
+                    ),
+                    400,
+                )
 
-      from_location = data["from_location"]
-      to_location = data["to_location"]
-      departure_time = datetime.fromisoformat(data["departure_time"])
+        from_location = data["from_location"]
+        to_location = data["to_location"]
+        departure_time = datetime.fromisoformat(data["departure_time"])
 
-      post_data.update(
-          {
-              "from_location": from_location,
-              "to_location": to_location,
-              "departure_time": departure_time,
-              "seats_available": int(data.get("seats_available", 1)),
-          }
-      )
+        post_data.update(
+            {
+                "from_location": from_location,
+                "to_location": to_location,
+                "departure_time": departure_time,
+                "seats_available": int(data.get("seats_available", 1)),
+            }
+        )
 
-      # Append to description
-      formatted_time = departure_time.strftime("%B %d, %Y at %I:%M %p")  # e.g., April 20, 2025 at 08:30 AM
-      post_data["description"] = (
-          f"From {from_location} to {to_location} on {formatted_time}. {data['description']}"
-      )
+        # Append to description
+        formatted_time = departure_time.strftime(
+            "%B %d, %Y at %I:%M %p"
+        )  # e.g., April 20, 2025 at 08:30 AM
+        post_data["description"] = (
+            f"From {from_location} to {to_location} on {formatted_time}. {data['description']}"
+        )
 
     else:
         return jsonify({"error": "Invalid post category provided"}), 400
 
-    post_data["description_vector"] = [0.0] * OPENAI_EMBEDDING_DIMENSIONS
+    post_data["description_vector"] = [0.0] * EMBEDDINGS_DIMENSIONS  # Placeholder for embedding
     # Insert into DB with PROCESSING status
     post = posts.insert_one(post_data)
 
@@ -749,7 +733,7 @@ def semantic_search_posts():
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
-    query_embedding = get_openai_embedding(query)
+    query_embedding = get_embeddings(query)
     similarity_threshold = SCORE_THRESHOLD
 
     posts = get_posts_collection()
@@ -811,6 +795,7 @@ def semantic_search_posts():
 
     return jsonify(filtered_results), 200
 
+
 @routes.route("/api/myposts/semanticsearch", methods=["POST"])
 @jwt_required
 def semantic_search_my_posts():
@@ -849,7 +834,7 @@ def semantic_search_my_posts():
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
-    query_embedding = get_openai_embedding(query)
+    query_embedding = get_embeddings(query)
 
     # Vector search and filter to user-owned posts
     raw_results = posts.aggregate(
@@ -864,7 +849,12 @@ def semantic_search_my_posts():
                     }
                 }
             },
-            {"$match": {"owner": user_email, "status": {"$ne": PostStatus.DELETED.value}}},
+            {
+                "$match": {
+                    "owner": user_email,
+                    "status": {"$ne": PostStatus.DELETED.value},
+                }
+            },
             {
                 "$project": {
                     "_id": {"$toString": "$_id"},
@@ -906,6 +896,7 @@ def semantic_search_my_posts():
     filtered_results.sort(key=lambda x: x["score"], reverse=True)
 
     return jsonify(filtered_results), 200
+
 
 @routes.route("/api/posts", methods=["GET"])
 @jwt_required

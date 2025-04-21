@@ -25,7 +25,8 @@ locals {
     cloudfront_url              = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cloudfront_key_pair_id      = aws_cloudfront_public_key.signing_key.id
     cloudfront_private_key_path = "/home/ec2-user/keys/private_key.pem"
-    openai_api_key              = var.openai_api_key
+    embeddings_provider         = var.embeddings_provider
+    embeddings_api_key          = var.embeddings_api_key
   })
 
   # Generate local development environment content
@@ -48,7 +49,8 @@ locals {
     cloudfront_url              = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/"
     cloudfront_key_pair_id      = aws_cloudfront_public_key.signing_key.id
     cloudfront_private_key_path = "private_key.pem"
-    openai_api_key              = var.openai_api_key
+    embeddings_provider         = var.embeddings_provider
+    embeddings_api_key          = var.embeddings_api_key
   })
 
   # MIME types mapping

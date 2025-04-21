@@ -94,7 +94,11 @@ variable "s3_distribution_public_key" {
   default     = "keys/public_key.pem" # Update this path to your public key file
 }
 
-variable "openai_api_key" {
+variable "embeddings_provider" {
+  description = "Embeddings provider for the application"
+  type        = string
+}
+variable "embeddings_api_key" {
   description = "OpenAI API key for the application"
   type        = string
   sensitive   = true

@@ -1,5 +1,9 @@
 import os
 import boto3
+from typing import List
+from google import genai
+from openai import OpenAI
+from google.genai import types
 
 # Initialize AWS services
 rekognition_client = boto3.client('rekognition')
@@ -85,3 +89,39 @@ def store_image_in_s3(image_data, image_name):
         print(f"Error storing image in S3: {e}")
         return None
 
+
+EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER")
+if EMBEDDINGS_PROVIDER == "GEMINI":
+    EMBEDDINGS_API_KEY = os.getenv("EMBEDDINGS_API_KEY")
+    if not EMBEDDINGS_API_KEY:
+        raise ValueError("EMBEDDING_API_KEY is required for embeddings.")
+    embeddings_client = genai.Client(api_key=EMBEDDINGS_API_KEY)
+    EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "gemini-embedding-exp-03-07")
+    EMBEDDINGS_DIMENSIONS = int(os.getenv("EMBEDDINGS_DIMENSIONS", 1536))
+
+    def get_embeddings(text: str) -> List[float]:
+        response = embeddings_client.models.embed_content(
+            model=EMBEDDINGS_MODEL,
+            contents=text,
+            config=types.EmbedContentConfig(
+                task_type="SEMANTIC_SIMILARITY",
+                output_dimensionality=EMBEDDINGS_DIMENSIONS,
+            ),
+        )
+        return response.embeddings[0].values
+
+elif EMBEDDINGS_PROVIDER == "OPENAI":
+    EMBEDDINGS_API_KEY = os.getenv("EMBEDDINGS_API_KEY")
+    if not EMBEDDINGS_API_KEY:
+        raise ValueError("EMBEDDINGS_API_KEY is required for embeddings.")
+    os.environ["OPENAI_API_KEY"] = EMBEDDINGS_API_KEY
+    embeddings_client = OpenAI()
+    EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "text-embedding-ada-002")
+    EMBEDDINGS_DIMENSIONS = int(os.getenv("EMBEDDINGS_DIMENSIONS", 1536))
+
+    def get_embeddings(text: str) -> List[float]:
+        response = embeddings_client.embeddings.create(model=EMBEDDINGS_MODEL, input=text)
+        return response.data[0].embedding
+
+else:
+    raise ValueError("Invalid EMBEDDINGS_PROVIDER. Choose either 'OPENAI' or 'GEMINI'.")
