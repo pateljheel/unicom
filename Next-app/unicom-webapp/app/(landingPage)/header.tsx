@@ -12,7 +12,7 @@ export const Header = () => {
         
         {/* Left side - Clickable Mascot and Title */}
         <Link href="/" className="pt-1 pl-4 pb-1 flex items-center gap-x-2 hover:opacity-90 transition">
-          <Image src="/unicomMascot.svg" height={70} width={50} alt="Mascot" />
+          <Image src="/logo_tiger.png" height={70} width={65} alt="Mascot" />
           <h1 className="text-4xl font-extrabold text-orange-500 tracking-wide">UniCom</h1>
         </Link>
 
