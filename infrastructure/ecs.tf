@@ -208,6 +208,9 @@ resource "aws_ecs_service" "app_service" {
   launch_type     = "FARGATE"
   desired_count   = 1
 
+  enable_execute_command = true
+
+
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
     assign_public_ip = false
@@ -260,8 +263,8 @@ resource "aws_appautoscaling_policy" "cpu_target_tracking" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value       = 70.0
+    target_value       = 60.0
     scale_in_cooldown  = 300
-    scale_out_cooldown = 300
+    scale_out_cooldown = 200
   }
 }
