@@ -117,3 +117,12 @@ docker run \
   --env-file .env \
   --env PRIVATE_KEY_DATA="$(<private_key.pem)" \
   unicom-api
+
+
+aws ecs execute-command \
+     --cluster unicom-stg-ecs-cluster \
+     --task e55421daf22f4e89a5412aa0476660cb \
+     --container app-container \
+     --command "sh" \
+     --interactive \
+     --region us-east-1

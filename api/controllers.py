@@ -13,12 +13,15 @@ from utils import process_image, process_text, store_image_in_s3
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 routes = Blueprint("routes", __name__)
 
-CLOUDFRONT_URL = os.getenv(
-    "CLOUDFRONT_URL"
-) 
+CLOUDFRONT_URL = os.getenv("CLOUDFRONT_URL")
 KEY_PAIR_ID = os.getenv("CLOUDFRONT_KEY_PAIR_ID")
 PRIVATE_KEY_PATH = os.getenv("CLOUDFRONT_PRIVATE_KEY_PATH")
 
@@ -33,10 +36,9 @@ OPENAI_EMBEDDING_DIMENSIONS = int(
     os.getenv("EMBEDDING_DIMENSIONS", 1536)
 )  # Default to 1536 if not set
 
-SCORE_THRESHOLD = float(
-    os.getenv("SCORE_THRESHOLD", 0.80)
-)
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.80))
 TOP_K = int(os.getenv("TOP_K", 5))  # Default to 5 if not set
+
 
 @routes.route("/api/users", methods=["POST"])
 @jwt_required
@@ -235,14 +237,14 @@ def async_moderate_post(post_id, post_data, images, posts):
                 try:
                     image_bytes = base64.b64decode(image_data)
                 except Exception as e:
-                    print(f"Base64 decoding failed for image {i+1}: {e}")
+                    logger.error(f"Base64 decoding failed for image {i+1}: {e}")
                     posts.update_one(
                         {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
                     )
                     return
 
                 if not process_image(image_bytes):
-                    print(f"Image {i+1} failed moderation")
+                    logger.error(f"Image {i+1} failed moderation")
                     posts.update_one(
                         {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
                     )
@@ -252,7 +254,7 @@ def async_moderate_post(post_id, post_data, images, posts):
 
         # Step 3: Moderate the text
         if not process_text(post_data["description"]):
-            print("Text moderation failed")
+            logger.error("Text moderation failed")
             posts.update_one(
                 {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
             )
@@ -264,7 +266,7 @@ def async_moderate_post(post_id, post_data, images, posts):
             image_name = f"published/post_{str(post_id)}/image_{i+1}.jpg"
             image_url = store_image_in_s3(image_bytes, image_name)
             if not image_url:
-                print(f"Image {i+1} failed to upload to S3")
+                logger.error(f"Image {i+1} failed to upload to S3")
                 posts.update_one(
                     {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
                 )
@@ -281,7 +283,7 @@ def async_moderate_post(post_id, post_data, images, posts):
             embedding = get_openai_embedding(post_data["description"])
             update_data["description_vector"] = embedding
         except Exception as e:
-            print(f"Embedding generation failed: {e}")
+            logger.error(f"Embedding generation failed: {e}")
             posts.update_one(
                 {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
             )
@@ -290,7 +292,7 @@ def async_moderate_post(post_id, post_data, images, posts):
         posts.update_one({"_id": post_id}, {"$set": update_data})
 
     except Exception as e:
-        print(f"Moderation error: {e}")
+        logger.error(f"Moderation error: {e}")
         posts.update_one(
             {"_id": post_id}, {"$set": {"status": PostStatus.FAILED.value}}
         )
@@ -352,27 +354,38 @@ def create_post():
     }
     # Additional category-specific validation
     if post_category == PostCategory.ROOMMATE.value:
-        for field in ["community", "rent", "start_date"]:
-            if field not in data:
-                return (
-                    jsonify(
-                        {"error": f"{field} is required for category {post_category}"}
-                    ),
-                    400,
-                )
-        post_data.update(
-            {
-                "community": data["community"],
-                "rent": float(data["rent"]),
-                "start_date": datetime.fromisoformat(
-                    data["start_date"]
-                ),  # Assuming start_date is in ISO format
-            }
-        )
-        gender_preference = data.get("general_preferences")
-        if gender_preference not in [gender.value for gender in GenderPreference]:
-            gender_preference = GenderPreference.ANY.value
-        post_data["gender_preference"] = gender_preference
+      for field in ["community", "rent", "start_date"]:
+          if field not in data:
+              return (
+                  jsonify(
+                      {"error": f"{field} is required for category {post_category}"}
+                  ),
+                  400,
+              )
+      start_date_obj = datetime.fromisoformat(data["start_date"])
+      post_data.update(
+          {
+              "community": data["community"],
+              "rent": float(data["rent"]),
+              "start_date": start_date_obj,
+          }
+      )
+      formatted_start_date = start_date_obj.strftime("%B %d, %Y")
+      gender_preference = data.get("gender_preference")
+      if gender_preference not in [gender.value for gender in GenderPreference]:
+          gender_preference = GenderPreference.ANY.value
+      post_data["gender_preference"] = gender_preference
+
+      # Prepare preferences text
+      preferences = data.get("preferences", [])
+      post_data["preferences"] = preferences
+      preferences_str = ", ".join(preferences) if preferences else "None"
+
+      # Append to description
+      post_data["description"] = (
+          f"Community: {data['community']} | Preference: {gender_preference} | Preferences: {preferences_str}. "
+          f"Available from {formatted_start_date}. {data['description']}"
+      )
 
     elif post_category == PostCategory.SELL.value:
         for field in ["price", "item"]:
@@ -395,26 +408,33 @@ def create_post():
         post_data["sub_category"] = sub_category
 
     elif post_category == PostCategory.CARPOOL.value:
-        for field in ["from_location", "to_location", "departure_time"]:
-            if field not in data:
-                return (
-                    jsonify(
-                        {"error": f"{field} is required for category {post_category}"}
-                    ),
-                    400,
-                )
-        post_data.update(
-            {
-                "from_location": data["from_location"],
-                "to_location": data["to_location"],
-                "departure_time": datetime.fromisoformat(
-                    data["departure_time"]
-                ),  # Assuming departure_time is in ISO format
-                "seats_available": int(
-                    data.get("seats_available", 1)
-                ),  # Default to 1 if not provided
-            }
-        )
+      for field in ["from_location", "to_location", "departure_time"]:
+          if field not in data:
+              return (
+                  jsonify(
+                      {"error": f"{field} is required for category {post_category}"}
+                  ),
+                  400,
+              )
+
+      from_location = data["from_location"]
+      to_location = data["to_location"]
+      departure_time = datetime.fromisoformat(data["departure_time"])
+
+      post_data.update(
+          {
+              "from_location": from_location,
+              "to_location": to_location,
+              "departure_time": departure_time,
+              "seats_available": int(data.get("seats_available", 1)),
+          }
+      )
+
+      # Append to description
+      formatted_time = departure_time.strftime("%B %d, %Y at %I:%M %p")  # e.g., April 20, 2025 at 08:30 AM
+      post_data["description"] = (
+          f"From {from_location} to {to_location} on {formatted_time}. {data['description']}"
+      )
 
     else:
         return jsonify({"error": "Invalid post category provided"}), 400
@@ -720,6 +740,7 @@ def cosine_similarity(vec1, vec2):
         return 0.0
     return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
 
+
 @routes.route("/api/posts/semanticsearch", methods=["POST"])
 @jwt_required
 def semantic_search_posts():
@@ -734,43 +755,45 @@ def semantic_search_posts():
     posts = get_posts_collection()
 
     # Fetch top-k candidates with vector search
-    raw_results = posts.aggregate([
-        {
-            "$search": {
-                "vectorSearch": {
-                    "path": "description_vector",
-                    "vector": query_embedding,
-                    "k": TOP_K, 
-                    "similarity": "cosine",
+    raw_results = posts.aggregate(
+        [
+            {
+                "$search": {
+                    "vectorSearch": {
+                        "path": "description_vector",
+                        "vector": query_embedding,
+                        "k": TOP_K,
+                        "similarity": "cosine",
+                    }
                 }
-            }
-        },
-        {"$match": {"status": PostStatus.PUBLISHED.value}},
-        {
-            "$project": {
-                "_id": {"$toString": "$_id"},
-                "title": 1,
-                "description": 1,
-                "category": 1,
-                "owner": 1,
-                "status": 1,
-                "created_at": 1,
-                "image_url": 1,
-                "sub_category": 1,
-                "community": 1,
-                "rent": 1,
-                "start_date": 1,
-                "gender_preference": 1,
-                "item": 1,
-                "price": 1,
-                "from_location": 1,
-                "to_location": 1,
-                "departure_time": 1,
-                "seats_available": 1,
-                "description_vector": 1,
-            }
-        }
-    ])
+            },
+            {"$match": {"status": PostStatus.PUBLISHED.value}},
+            {
+                "$project": {
+                    "_id": {"$toString": "$_id"},
+                    "title": 1,
+                    "description": 1,
+                    "category": 1,
+                    "owner": 1,
+                    "status": 1,
+                    "created_at": 1,
+                    "image_url": 1,
+                    "sub_category": 1,
+                    "community": 1,
+                    "rent": 1,
+                    "start_date": 1,
+                    "gender_preference": 1,
+                    "item": 1,
+                    "price": 1,
+                    "from_location": 1,
+                    "to_location": 1,
+                    "departure_time": 1,
+                    "seats_available": 1,
+                    "description_vector": 1,
+                }
+            },
+        ]
+    )
 
     filtered_results = []
     for post in raw_results:
