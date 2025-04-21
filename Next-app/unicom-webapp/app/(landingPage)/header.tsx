@@ -24,6 +24,9 @@ export const Header = () => {
           <Link href="/myposts" className="text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition">
             My Post
           </Link>
+          <Link href="/features" className="text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition">
+            Features
+          </Link>
           
 
           <button
