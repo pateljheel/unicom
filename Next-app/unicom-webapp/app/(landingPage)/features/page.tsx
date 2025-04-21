@@ -10,7 +10,7 @@ export default function FeaturesPage() {
   );
 }
 
-export const FeaturesSection = () => {
+const FeaturesSection = () => {
   return (
     <section
       className="w-full py-16 md:py-24 lg:py-32 bg-white"

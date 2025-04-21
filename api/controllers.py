@@ -811,6 +811,101 @@ def semantic_search_posts():
 
     return jsonify(filtered_results), 200
 
+@routes.route("/api/myposts/semanticsearch", methods=["POST"])
+@jwt_required
+def semantic_search_my_posts():
+    """
+    Semantic search within current user's posts.
+    ---
+    tags:
+      - Posts
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            query:
+              type: string
+              description: The search query for semantic similarity
+              example: "room near downtown with parking"
+    responses:
+      200:
+        description: List of matching user posts
+      400:
+        description: Query missing or invalid
+    """
+    posts = get_posts_collection()
+    user_payload = request.user_payload
+    user_email = user_payload.get("email")
+
+    if not user_email:
+        return jsonify({"error": "User email not found in token"}), 400
+
+    data = request.json
+    query = data.get("query", "").strip()
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+
+    query_embedding = get_openai_embedding(query)
+
+    # Vector search and filter to user-owned posts
+    raw_results = posts.aggregate(
+        [
+            {
+                "$search": {
+                    "vectorSearch": {
+                        "path": "description_vector",
+                        "vector": query_embedding,
+                        "k": TOP_K,
+                        "similarity": "cosine",
+                    }
+                }
+            },
+            {"$match": {"owner": user_email, "status": {"$ne": PostStatus.DELETED.value}}},
+            {
+                "$project": {
+                    "_id": {"$toString": "$_id"},
+                    "title": 1,
+                    "description": 1,
+                    "category": 1,
+                    "owner": 1,
+                    "status": 1,
+                    "created_at": 1,
+                    "image_url": 1,
+                    "sub_category": 1,
+                    "community": 1,
+                    "rent": 1,
+                    "start_date": 1,
+                    "gender_preference": 1,
+                    "item": 1,
+                    "price": 1,
+                    "from_location": 1,
+                    "to_location": 1,
+                    "departure_time": 1,
+                    "seats_available": 1,
+                    "description_vector": 1,
+                }
+            },
+        ]
+    )
+
+    # Compute score and filter by threshold
+    filtered_results = []
+    for post in raw_results:
+        post_vec = post.get("description_vector")
+        if not post_vec:
+            continue
+        score = cosine_similarity(query_embedding, post_vec)
+        if score >= SCORE_THRESHOLD:
+            post["score"] = score
+            filtered_results.append(post)
+
+    filtered_results.sort(key=lambda x: x["score"], reverse=True)
+
+    return jsonify(filtered_results), 200
 
 @routes.route("/api/posts", methods=["GET"])
 @jwt_required

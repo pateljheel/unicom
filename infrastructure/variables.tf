@@ -124,8 +124,3 @@ variable "api_container_image" {
   description = "Container image for the API application"
   type        = string
 }
-
-variable "cognito_domain" {
-  description = "Cognito domain name"
-  type        = string
-}

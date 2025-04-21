@@ -125,29 +125,29 @@ resource "aws_ecs_task_definition" "app_task" {
         hostPort      = 8080
       }]
       environment = [
-        { name = "AWS_REGION",             value = var.app_region },
-        { name = "AWS_DEFAULT_REGION",     value = var.app_region },
-        { name = "FLASK_PORT",             value = "8080" },
-        { name = "MONGO_HOST",             value = aws_docdb_cluster.db_cluster.endpoint },
-        { name = "MONGO_PORT",             value = "27017" },
-        { name = "MONGO_DB",               value = var.app_name },
-        { name = "MONGO_USERNAME",         value = var.db_username },
-        { name = "MONGO_PASSWORD",         value = var.db_password },
-        { name = "MONGO_USE_TLS",          value = "true" },
-        { name = "MONGO_CA_FILE",          value = "global-bundle.pem" },
-        { name = "MONGO_MIN_POOL_SIZE",    value = "5" },
-        { name = "MONGO_MAX_POOL_SIZE",    value = "50" },
-        { name = "COGNITO_POOL_ID",        value = aws_cognito_user_pool.userpool.id },
-        { name = "COGNITO_REGION",         value = var.app_region },
-        { name = "COGNITO_APP_CLIENT_ID",  value = aws_cognito_user_pool_client.userpool_client.id },
-        { name = "S3_BUCKET_NAME",         value = aws_s3_bucket.images_bucket.bucket },
-        { name = "CLOUDFRONT_URL",         value = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/" },
+        { name = "AWS_REGION", value = var.app_region },
+        { name = "AWS_DEFAULT_REGION", value = var.app_region },
+        { name = "FLASK_PORT", value = "8080" },
+        { name = "MONGO_HOST", value = aws_docdb_cluster.db_cluster.endpoint },
+        { name = "MONGO_PORT", value = "27017" },
+        { name = "MONGO_DB", value = var.app_name },
+        { name = "MONGO_USERNAME", value = var.db_username },
+        { name = "MONGO_PASSWORD", value = var.db_password },
+        { name = "MONGO_USE_TLS", value = "true" },
+        { name = "MONGO_CA_FILE", value = "global-bundle.pem" },
+        { name = "MONGO_MIN_POOL_SIZE", value = "5" },
+        { name = "MONGO_MAX_POOL_SIZE", value = "50" },
+        { name = "COGNITO_POOL_ID", value = aws_cognito_user_pool.userpool.id },
+        { name = "COGNITO_REGION", value = var.app_region },
+        { name = "COGNITO_APP_CLIENT_ID", value = aws_cognito_user_pool_client.userpool_client.id },
+        { name = "S3_BUCKET_NAME", value = aws_s3_bucket.images_bucket.bucket },
+        { name = "CLOUDFRONT_URL", value = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}/" },
         { name = "CLOUDFRONT_KEY_PAIR_ID", value = aws_cloudfront_public_key.signing_key.id },
         { name = "CLOUDFRONT_PRIVATE_KEY_PATH", value = "private_key.pem" },
-        { name = "OPENAI_API_KEY",         value = var.openai_api_key },
-        { name = "PRIVATE_KEY_DATA",       value = tls_private_key.cloudfront_signing_key.private_key_pem },
-        { name = "SCORE_THRESHOLD",        value = "0.8" },
-        { name = "TOP_K",                  value = "5" },
+        { name = "OPENAI_API_KEY", value = var.openai_api_key },
+        { name = "PRIVATE_KEY_DATA", value = tls_private_key.cloudfront_signing_key.private_key_pem },
+        { name = "SCORE_THRESHOLD", value = "0.8" },
+        { name = "TOP_K", value = "5" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -156,6 +156,13 @@ resource "aws_ecs_task_definition" "app_task" {
           awslogs-region        = var.app_region
           awslogs-stream-prefix = "ecs"
         }
+      }
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
       }
     }
   ])
@@ -232,39 +239,6 @@ resource "aws_ecs_service" "app_service" {
       Environment = var.app_environment
     }
   )
-}
-
-#-------------------------------------------------------------
-# 1) Define AppAutoScaling Target for your ECS Service
-#-------------------------------------------------------------
-resource "aws_appautoscaling_target" "ecs_service" {
-  service_namespace  = "ecs"
-  scalable_dimension = "ecs:service:DesiredCount"
-  resource_id        = "service/${aws_ecs_cluster.app_cluster.name}/${aws_ecs_service.app_service.name}"
-
-  # scale between 1 and 4 tasks
-  min_capacity = 1
-  max_capacity = 4
-}
-
-#-------------------------------------------------------------
-# 2) CPU‑based Target Tracking Scaling Policy
-#-------------------------------------------------------------
-resource "aws_appautoscaling_policy" "cpu_target_tracking" {
-  name               = "${var.app_name}-${var.app_environment}-cpu-autoscale"
-  service_namespace  = aws_appautoscaling_target.ecs_service.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_service.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_service.scalable_dimension
-  policy_type        = "TargetTrackingScaling"
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-    target_value       = 60.0
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 200
-  }
 }
 
 #-------------------------------------------------------------
