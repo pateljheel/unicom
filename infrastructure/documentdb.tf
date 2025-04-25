@@ -21,7 +21,7 @@ resource "aws_docdb_cluster" "db_cluster" {
   cluster_identifier      = "${var.app_name}-${var.app_environment}-db-cluster"
   engine                  = "docdb"
   master_username         = var.db_username
-  master_password_wo      = var.db_password
+  master_password      = var.db_password
   backup_retention_period = 1
   preferred_backup_window = "07:00-09:00"
   db_subnet_group_name    = aws_docdb_subnet_group.db_subnet_group.name
