@@ -10,9 +10,11 @@ export default function Home() {
   return (
     <section
       className="w-full flex items-center justify-center px-4 py-20"
-      style={{ 
-        backgroundImage: "linear-gradient(135deg, #FFD8B0 0%, #FFD8B0 49%, #D6B38A 50%, #FFB375 51%, #FFB375 100%)" 
-      }}
+      // style={{ 
+      //   backgroundImage: "linear-gradient(135deg, #FFD8B0 0%, #FFD8B0 49%, #D6B38A 50%, #FFB375 51%, #FFB375 100%)" 
+      // }}
+      // style={{ backgroundImage: "linear-gradient(135deg, #FFD8B0 0%, #FEA06F 50%, #FF9F5D 100%)" }}
+      style={{ backgroundImage: "linear-gradient(135deg, #FF9F5D 0%, #FEA06F 50%, #FFD8B0 100%)" }}
     >
       <div className="w-full max-w-6xl bg-[#fff7f2] rounded-3xl shadow-2xl px-8 py-12 lg:py-16 flex flex-col-reverse lg:flex-row items-center justify-between gap-16">
         
@@ -95,7 +97,7 @@ export default function Home() {
             style={{ perspective: "1000px" }}
           >
             <Image
-              src="/Tigers2.png"
+              src="/landing.png"
               alt="Students using UniCom"
               fill
               priority
