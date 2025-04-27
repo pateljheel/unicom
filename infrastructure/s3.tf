@@ -144,7 +144,10 @@ resource "aws_s3_bucket_policy" "website_bucket_cf_policy" {
     ]
   })
 
-  depends_on = [aws_cloudfront_distribution.s3_distribution]
+  depends_on = [
+    aws_s3_bucket_public_access_block.public_access,
+    aws_cloudfront_distribution.s3_distribution,
+  ]
 }
 
 
