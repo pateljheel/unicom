@@ -19,6 +19,7 @@ jobs:
     env:
       BUCKET_NAME: ${{ vars.TF_STATE_BUCKET }}
       REGION_NAME: ${{ vars.AWS_REGION }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
 
     steps:
       # 1. Check out the repository
@@ -82,6 +83,11 @@ jobs:
     name: "Terraform_destroy"
     if: ${{ github.event.inputs.action == 'Terraform_destroy' }}
     runs-on: ubuntu-latest
+    
+    env:
+      BUCKET_NAME: ${{ vars.TF_STATE_BUCKET }}
+      REGION_NAME: ${{ vars.AWS_REGION }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
 
     steps:
       # 1. Check out the repository
