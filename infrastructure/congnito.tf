@@ -74,7 +74,7 @@ resource "aws_cognito_user_pool_client" "userpool_client" {
 
 resource "aws_lambda_function" "pre_signup_lambda" {
   filename      = "scripts/pre_signup_lambda.zip"
-  function_name = "PreSignupLambda"
+  function_name = "PreSignupLambdaFunc"
   role          = aws_iam_role.lambda_role.arn
   handler       = "pre_signup_lambda.lambda_handler"
   runtime       = "python3.11"
@@ -104,7 +104,7 @@ resource "aws_iam_policy_attachment" "lambda_basic_execution" {
 }
 
 resource "aws_cognito_user_pool_domain" "userpool_domain" {
-  domain       = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
+  domain       = "${var.app_name}-${var.app_environment}-userpool-domain"
   user_pool_id = aws_cognito_user_pool.userpool.id
 }
 

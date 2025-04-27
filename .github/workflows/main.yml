@@ -58,13 +58,17 @@ jobs:
         working-directory: infrastructure
         run: terraform init
 
+      - name: Terraform Plan
+        working-directory: infrastructure
+        run: terraform plan
+
       - name: Terraform Apply
         working-directory: infrastructure
         run: terraform apply -auto-approve
 
       # 6. Build the website front-end
       - name: Build front-end
-        working-directory: Next-app\unicom-webapp
+        working-directory: Next-app/unicom-webapp
         run: |
           npm install
           npm run build
@@ -111,7 +115,9 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan Destroy
+        working-directory: infrastructure
         run: terraform plan -destroy
 
       - name: Terraform Destroy
+        working-directory: infrastructure
         run: terraform destroy -auto-approve

@@ -1,5 +1,5 @@
 # global variables
-app_name = "unicom"
+app_name = "unicom-final"
 app_environment = "stg"
 app_region = "us-east-1"
 
@@ -13,7 +13,7 @@ azs = ["us-east-1a", "us-east-1b"]
 api_container_image = "jheelp/unicom:latest" # Change this to your API container image
 
 # docdb variables
-db_username = "unicom"
+db_username = "unicomdb"
 db_password = "password1234" # Change this to a secure password
 db_instance_class = "db.t3.medium"
 
