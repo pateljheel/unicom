@@ -57,11 +57,11 @@ jobs:
 
       - name: Terraform Plan
         working-directory: infrastructure
-        run: terraform plan
+        run: terraform plan -var="app_region=$REGION_NAME" -var="embeddings_api_key=$EMBEDDINGS_API_KEY"
 
       - name: Terraform Apply
         working-directory: infrastructure
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="app_region=$REGION_NAME" -var="embeddings_api_key=$EMBEDDINGS_API_KEY"
 
       # 6. Build the website front-end
       - name: Build front-end
@@ -110,10 +110,15 @@ jobs:
         with:
           terraform_version: 1.1.9  # Adjust as needed
 
+
       # 5. Terraform Init & Apply (to create/update the infrastructure)
       - name: Terraform Init
         working-directory: infrastructure
         run: terraform init
+
+      - name: Terraform Plan Destroy
+        working-directory: infrastructure
+        run: terraform plan -destroy -var="app_region=$REGION_NAME" -var="embeddings_api_key=$EMBEDDINGS_API_KEY"
 
       - name: Terraform Destroy
         working-directory: infrastructure
