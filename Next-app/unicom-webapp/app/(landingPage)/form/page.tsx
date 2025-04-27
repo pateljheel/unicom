@@ -369,7 +369,7 @@ export default function ListingForm() {
                     </label>
                     <input
                       type="file"
-                      id="uploadImagesSell"
+                      id="uploadImagesRoommate"
                       multiple
                       accept="image/*"
                       className="mt-1 block w-full text-sm text-gray-700 
