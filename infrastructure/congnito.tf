@@ -104,7 +104,7 @@ resource "aws_iam_policy_attachment" "lambda_basic_execution" {
 }
 
 resource "aws_cognito_user_pool_domain" "userpool_domain" {
-  domain       = "${var.app_name}-${var.app_environment}-userpool-domain"
+  domain       = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
   user_pool_id = aws_cognito_user_pool.userpool.id
 }
 
