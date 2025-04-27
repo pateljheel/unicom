@@ -4,6 +4,5 @@ terraform {
     bucket         = "s3-aws-project-unicom"
     key            = "terraform.tfstate"
     region         = "us-east-1"
-    # profile        = "unifamily"
   }
 }

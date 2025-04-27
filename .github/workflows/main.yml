@@ -16,6 +16,10 @@ jobs:
     if: ${{ github.event.inputs.action == 'Terraform_apply' }}
     runs-on: ubuntu-latest
 
+    env:
+      BUCKET_NAME: ${{ vars.TF_STATE_BUCKET }}
+      REGION_NAME: ${{ vars.AWS_REGION }}
+
     steps:
       # 1. Check out the repository
       - name: Check out code
@@ -26,10 +30,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ vars.AWS_REGION }}  # or whatever region you use
-          profile: unifamily
 
       # 3. Install Terraform
       - name: Set up Terraform
@@ -37,21 +40,14 @@ jobs:
         with:
           terraform_version: 1.1.9  # Adjust as needed
 
-      # 4. Create key files from secrets (private_key.pem, public_key.pem)
-      # - name: Write key files
-      #   run: |
-      #     mkdir -p infrastructure/keys
-      #     echo "${{ secrets.PRIVATE_KEY_PEM }}" > infrastructure/keys/private_key.pem
-      #     echo "${{ secrets.PUBLIC_KEY_PEM }}" > infrastructure/keys/public_key.pem
-      #     chmod 600 infrastructure/keys/private_key.pem
-      #     chmod 600 infrastructure/keys/public_key.pem
-      - name: Create unique key pair for deployment
+      # 4 Replace the bucket name and region in backend.tf
+      - name: Replace bucket name and region in backend.tf
+        working-directory: infrastructure
         run: |
-          mkdir -p infrastructure/keys
-          openssl genrsa -out infrastructure/keys/private_key.pem 2048
-          openssl rsa -pubout -in infrastructure/keys/private_key.pem -out infrastructure/keys/public_key.pem
-          chmod 600 infrastructure/keys/private_key.pem
-          chmod 600 infrastructure/keys/public_key.pem
+          echo "Bucket Name: $BUCKET_NAME"
+          echo "Region Name: $REGION_NAME"
+          sed -i "s/bucket\s*=\s*\".*\"/bucket = \"$BUCKET_NAME\"/" backend.tf
+          sed -i "s/region\s*=\s*\".*\"/region = \"$REGION_NAME\"/" backend.tf
 
       # 5. Terraform Init & Apply (to create/update the infrastructure)
       - name: Terraform Init
