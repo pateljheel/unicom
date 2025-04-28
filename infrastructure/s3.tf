@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "website_bucket" {
-  bucket        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
+  bucket        = "${var.app_name}-${var.app_environment}-website-${random_id.app_id.hex}"
   force_destroy = true
 
   tags = merge(
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_s3_bucket" "images_bucket" {
-  bucket        = "${var.app_name}-${var.app_environment}-${random_id.app_id.hex}"
+  bucket        = "${var.app_name}-${var.app_environment}-images-${random_id.app_id.hex}"
   force_destroy = true # Allows deletion of the bucket even if it contains objects
 
   tags = merge(
@@ -97,7 +97,7 @@ resource "aws_s3_bucket_policy" "images_bucket_policy" {
         Sid    = "AllowECSTasksToAccessImages",
         Effect = "Allow",
         Principal = {
-          AWS = aws_iam_role.asg_instance_role.arn
+          AWS = "${aws_iam_role.asg_instance_role.arn}"
         },
         Action = [
           "s3:GetObject",
@@ -127,20 +127,6 @@ resource "aws_s3_bucket_policy" "website_bucket_cf_policy" {
         Action    = ["s3:GetObject"]
         Resource  = "${aws_s3_bucket.website_bucket.arn}/*"
       },
-      # {
-      #   Sid       = "AllowCloudFrontServicePrincipal"
-      #   Effect    = "Allow"
-      #   Principal = {
-      #     Service = "cloudfront.amazonaws.com"
-      #   }
-      #   Action    = "s3:GetObject"
-      #   Resource  = "${aws_s3_bucket.website_bucket.arn}/*"
-      #   Condition = {
-      #     StringEquals = {
-      #       "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
-      #     }
-      #   }
-      # }
     ]
   })
 
