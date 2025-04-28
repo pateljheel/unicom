@@ -52,6 +52,8 @@ To create each secret follow the steps listed below :
 4. Enter the secret name and value
 5. Click `Add secret`
 
+![Github Action Secrets](assets/gh_secrets.png)
+
 ***NOTE:*** The embeddings API key will be proided to the user
 
 ### GitHub Variables
@@ -69,6 +71,8 @@ To create each variable follow the steps listed below :
 4. Click `New repository variable`
 5. Enter the variable name and value
 6. Click `Add variable`
+
+![Github Action Variables](assets/gh_variables.png)
 
 ***NOTE:*** For `TF_STATE_BUCKET` make sure to use the same name given to the S3 bucket created in step 1 (AWS S3 bucket for state files)
 
