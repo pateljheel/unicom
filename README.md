@@ -41,8 +41,8 @@ For successful deployment, the following GitHub secrets must be created:
 
 | Secret Name | Description |
 |-------------|-------------|
-| `AWS_ACCESS_KEY_ID` | The access key for your AWS IAM user with appropriate deployment permissions |
-| `AWS_SECRET_ACCESS_KEY` | The secret access key paired with your AWS access key ID |
+| `AWS_ACCESS_KEY` | The access key for your AWS IAM user with appropriate deployment permissions |
+| `AWS_SECRET_KEY` | The secret access key paired with your AWS access key ID |
 | `EMBEDDINGS_API_KEY` | The API key used for embedding service authentication (provided to the user) |
 
 To create each secret follow the steps listed below : 
@@ -77,7 +77,7 @@ To create each variable follow the steps listed below :
 ## Deployment via GitHub Actions & Terraform
 
 ### Workflow Overview
-This project repository includes a **single reusable workflow** (`Deploy Uni-Com`)  which can be triggered manually through GitHub Actions.. The workflow description is provided in `.github/workflows/main.yml`. 
+This project repository includes a **single reusable workflow** (`Deploy Uni-Com`)  which can be triggered manually through GitHub Actions. The workflow description is provided in `.github/workflows/main.yml`. 
 
 Deploy Uni-Com contains 2 job descriptions :
 * **Terraform_apply** – provisions all AWS resources, builds the frontend and deploys the application.
@@ -106,21 +106,8 @@ To destroy all provisioned infrastructure, follow the steps listed below
 
 ## Using the Application
 
-### 5.1 Web App Tour
-*(Insert screenshots or diagrams – use `![alt text](./screenshots/home.png)` in Markdown)*
+We've created a short demonstration video on how to use the application which can be found [here](https://drive.google.com/file/d/1-51bH-6eQ8om26i9CdR_mHPr4g4JBCPb/view?usp=sharing).
 
-1. **Landing / Feed** – aggregated timeline of roommate, marketplace, and carpool posts.
-2. **Create Post** – plus-button opens a modal; upload up to 5 images (presigned uploads).
-3. **Search Bar** – semantic search powered by OpenAI embeddings; type "desk" to find listings.
-4. **Chat / Contact** – in-app messaging via WebSockets (*MVP placeholder*).
-
-### 5.2 Key Features & Scenarios
-| Scenario | Steps |
-|----------|-------|
-| **Find Roommate** | *Sign in → Roommates tab → Filters (room type, budget) → Contact.* |
-| **Sell Furniture** | *Create Post → Category: Marketplace → Upload images → Publish.* |
-| **Arrange Carpool** | *Create Post → Category: Carpool → Enter route/time → Publish.* |
-
-*(Add GIFs or short mp4 demos if possible)*
+### Note: The homepage URL is same as the CloudFront URL which is displayed in the terraform output as `cloudfront_distribution_domain_name`.
 
 ---
