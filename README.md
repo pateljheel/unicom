@@ -23,7 +23,9 @@
 ---
 
 ## Initial Setup
-Before deploying the application via GitHub Actions, users must complete an initial setup that includes configuring GitHub secrets and variables. This setup ensures secure access to AWS resources and proper configuration of the deployment environment. 
+Before deploying the application via GitHub Actions, users must complete an initial setup that includes configuring GitHub secrets and variables. This setup ensures secure access to AWS resources and proper configuration of the deployment environment.
+
+### Note: Use `main` branch for deployment. 
 
 ### AWS S3 bucket for state files
 To ensure a clean deployment and teardown of the project infrastructure, it is essential to store Terraform state files in an S3 bucket during the deployment (terraform apply) stage. Without storing the state files, any infrastructure provisioned during deployment cannot be properly destroyed using the GitHub Actions Terraform destroy workflow.
