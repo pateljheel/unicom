@@ -1,128 +1,126 @@
-# UniFamily
+# Uni-Com: User’s Guide
 
-This is the source repository for application and infrastructure code.
+**Purpose:** This standalone guide walks developers or testers through deploying, configuring, and using the Uni-Com application.
 
-# Branching strategy
+<!-- ---
 
-- All infrastructure feature branches must follow `tf-feature_name` branch name. When a new feature must be added, create a feature branch from main and once done open a pull request.
+## Table of Contents
+1. [Prerequisites](#1-prerequisites)
+2. [Initial Setup](#2-initial-setup)
+   1. [AWS Credentials & CLI](#21-configure-aws-credentials)
+   2. [Local Environment Variables](#22-local-environment-variables)
+3. [Deployment via GitHub Actions & Terraform](#3-deployment)
+   1. [Workflow Overview](#31-workflow-overview)
+   2. [Setup Action](#32-setup-action)
+   3. [Teardown Action](#33-teardown-action)
+4. [External Resources & Seed Data](#4-external-resources)
+5. [Using the Application](#5-using-the-application)
+   1. [Web App Tour](#51-web-app-tour)
+   2. [Key Features & Scenarios](#52-key-features)
+6. [Troubleshooting](#6-troubleshooting)
+7. [Appendix](#7-appendix) -->
 
-- For an application feature use branch name `app-feature_name`.
+---
 
-- As the first iteration is MVP only, we won't have any versioning.
+## Initial Setup
+Before deploying the application via GitHub Actions, users must complete an initial setup that includes configuring GitHub secrets and variables. This setup ensures secure access to AWS resources and proper configuration of the deployment environment. 
 
-# Terraform practices
+### AWS S3 bucket for state files
+To ensure a clean deployment and teardown of the project infrastructure, it is essential to store Terraform state files in an S3 bucket during the deployment (terraform apply) stage. Without storing the state files, any infrastructure provisioned during deployment cannot be properly destroyed using the GitHub Actions Terraform destroy workflow.
 
-- Naming convention for regional resources:
-    `{APP_NAME}-{APP_ENV}-{SERVICE_NAME}-{UNIQUE_APP_ID}`
+To create an empty S3 bucket for this purpose, follow these steps:
+* Log in to the AWS Management Console.
+* Navigate to the S3 service dashboard.
+* Click the Create bucket button.
+* Enter a unique name for the bucket.
+* Click Create bucket to finalize creation.
+* Record the bucket name, as it will be required when setting up GitHub Variables.
 
-- Naming convention for zonal resources:
-    `{APP_NAME}-{APP_ENV}-{SERVICE_NAME}-{AZ}-{UNIQUE_APP_ID}`
+### GitHub Secrets
+For successful deployment, the following GitHub secrets must be created:
 
-- State management for developers:
+| Secret Name | Description |
+|-------------|-------------|
+| `AWS_ACCESS_KEY_ID` | The access key for your AWS IAM user with appropriate deployment permissions |
+| `AWS_SECRET_ACCESS_KEY` | The secret access key paired with your AWS access key ID |
+| `EMBEDDINGS_API_KEY` | The API key used for embedding service authentication (provided to the user) |
 
-    ```sh
-    # each developer must work in their own terraform workspace
-    # name of the workspace can be anything related to their name, all uncased
+To create each secret follow the steps listed below : 
+1. Navigate to the project's GitHub repository
+2. Click on `Settings` → `Secrets and variables` → `Actions`
+3. Select `New repository secret`
+4. Enter the secret name and value
+5. Click `Add secret`
 
-    # if workspace is not created create it using the following command
-    terraform workspace new <WORKSPACE_NAME>
-    # or select existing environment on your local clone
-    terraform workspace select <WORKSPACE_NAME>
-    ```
+***NOTE:*** The embeddings API key will be proided to the user
 
-    The backend key in the bucket will be automatically selected based on the workspace name. Read https://developer.hashicorp.com/terraform/cli/workspaces for more details.
+### GitHub Variables
+For successful deployment, the following GitHub variables must be created:
 
-- Single S3 bucket will be used for state management for all the developers. Instead of bucket policy, create new user in the bucket account and configure new profile using the user keys.
+| Variable Name | Description |
+|---------------|-------------|
+| `AWS_REGION` | The AWS region where your resources will be deployed (e.g., `us-east-1`) |
+| `TF_STATE_BUCKET` | The S3 bucket name for storing Terraform state files. User must have this bucket already created in their AWS backend |
 
-    ```sh
-    aws configure --profile unifamily
-    ```
+To create each variable follow the steps listed below : 
+1. Navigate to the project's GitHub repository
+2. Click on `Settings` → `Secrets and variables` → `Actions`
+3. Select the `Variables` tab
+4. Click `New repository variable`
+5. Enter the variable name and value
+6. Click `Add variable`
 
-    In `backend.tf` `unifamily` profile is set for backend bucket.
+***NOTE:*** For `TF_STATE_BUCKET` make sure to use the same name given to the S3 bucket created in step 1 (AWS S3 bucket for state files)
 
-- In `provider.tf` use `default` profile to launch resources in your own account or use `unifamily` profile to launch resources in the central (bucket) account.
+---
 
-# Local development environment
+## Deployment via GitHub Actions & Terraform
 
-- Install mongodb locally or use docker container.
+### Workflow Overview
+This project repository includes a **single reusable workflow** (`Deploy Uni-Com`)  which can be triggered manually through GitHub Actions.. The workflow description is provided in `.github/workflows/main.yml`. 
 
-    ```bash
-    docker pull mongo
-    docker run -d -p 27017:27017 --name mongodb \
-      -e MONGO_INITDB_ROOT_USERNAME=unicom \
-      -e MONGO_INITDB_ROOT_PASSWORD=unicom \
-      -e MONGO_INITDB_DATABASE=unicom \
-      mongo
-    ```
+Deploy Uni-Com contains 2 job descriptions :
+* **Terraform_apply** – provisions all AWS resources, builds the frontend and deploys the application.
+* **Terraform_destroy** – tears down the provisioned infrastructure.
 
-- Now you can use mongodb in the local environment to implement and test the api.
-
-# Deploying the application on AWS
-
-## Pre-requisites
-
-0. Developer machine must have admin access to the AWS project with AWS CLI configured.
-
-1. Create public private key pair in the `infrastructure/keys` directory. This is a unique key pair for the deployment. Use the same key pair for future terraform runs for the same deployment.
-
-    ```bash
-    cd infrastructure/keys
-    openssl genrsa -out private_key.pem 2048
-    openssl rsa -pubout -in private_key.pem -out public_key.pem
-    ```
-
-2. Create terraform state backend s3 bucket if it doesn't exist. And update the bucket name in `infrastructure/backend` to match the created bucket.
-
-## Deploy/Update infrastructure and website
-
-1. Deploy or update (for subsequent runs of the deployment) the infrastructure using terraform.
-
-    ```bash
-    cd infrastructure
-    terraform init
-    terraform apply
-    ```
-
-2. Build the website in the `website/unicom` directory.
-
-    ```bash
-    cd ../website/unicom
-    npm install
-    npm run build
-    ```
-
-3. Again run terraform to sync website to the website s3 bucket.
-
-    ```bash
-    cd ../../infrastructure
-    terraform init
-    terraform apply
-    ```
+### Setup Action
+Before running Actions workflow, ensure all GitHub secrets and variables are properly configured. To deploy the application, follow the steps listed below :
+1. On the Github repository page, navigate to **Actions → Deploy Uni-Com → Run workflow**.
+2. Choose **Terraform_apply** from the drop-down.
+3. Click on `Run Workflow`
+4. Navigate to the `All workflows` tab, where a new workflow run will be running. Click on it.
+5. Click on `Terraform Apply`
+6. Upon a successful apply the Cognito login URL, logout URL, Cloudfront distribution domain and API Gateway URL will be displayed.
 
 
-## API Docs are available at the API endpoint `/apidocs`.
+### Teardown Action
+To destroy all provisioned infrastructure, follow the steps listed below
+1. Go to **Actions → Deploy Uni-Com → Run workflow** again.
+2. Select **Terraform_destroy** from the dropdown.
+3. Click on `Run Workflow`
+4. Navigate to the `All workflows` tab, where a new workflow run will be running.
+5. Upon successful completion, the provisioned AWS infrastructure will be destroyed.
 
 
-## Points
+---
 
-1. Use signed url instead of signed cookies.
-2. Move hardcoded values out from all the pages.
-3. Use auth context for id_token and signedurl instead of local storage.
-4. Update CORS on the API gateway.
+## Using the Application
 
-ssh -i "swen614-ubuntu-ssh-key.pem" -L 27017:unicom-stg-db-cluster.cluster-ctq0o6uy8zy0.us-east-1.docdb.amazonaws.com:27017 ec2-user@3.81.48.8 -N
+### 5.1 Web App Tour
+*(Insert screenshots or diagrams – use `![alt text](./screenshots/home.png)` in Markdown)*
 
+1. **Landing / Feed** – aggregated timeline of roommate, marketplace, and carpool posts.
+2. **Create Post** – plus-button opens a modal; upload up to 5 images (presigned uploads).
+3. **Search Bar** – semantic search powered by OpenAI embeddings; type "desk" to find listings.
+4. **Chat / Contact** – in-app messaging via WebSockets (*MVP placeholder*).
 
-docker run \
-  --env-file .env \
-  --env PRIVATE_KEY_DATA="$(<private_key.pem)" \
-  unicom-api
+### 5.2 Key Features & Scenarios
+| Scenario | Steps |
+|----------|-------|
+| **Find Roommate** | *Sign in → Roommates tab → Filters (room type, budget) → Contact.* |
+| **Sell Furniture** | *Create Post → Category: Marketplace → Upload images → Publish.* |
+| **Arrange Carpool** | *Create Post → Category: Carpool → Enter route/time → Publish.* |
 
+*(Add GIFs or short mp4 demos if possible)*
 
-aws ecs execute-command \
-     --cluster unicom-stg-ecs-cluster \
-     --task e55421daf22f4e89a5412aa0476660cb \
-     --container app-container \
-     --command "sh" \
-     --interactive \
-     --region us-east-1
+---
