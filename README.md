@@ -20,7 +20,6 @@
 6. [Troubleshooting](#6-troubleshooting)
 7. [Appendix](#7-appendix) -->
 
----
 
 ## Initial Setup
 Before deploying the application via GitHub Actions, users must complete an initial setup that includes configuring GitHub secrets and variables. This setup ensures secure access to AWS resources and proper configuration of the deployment environment.
