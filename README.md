@@ -116,3 +116,78 @@ We've created a short demonstration video on how to use the application which ca
 ### Note: The homepage URL is same as the CloudFront URL which is displayed in the terraform output as `cloudfront_distribution_domain_name`.
 
 ---
+
+## Architecture
+
+![High Level Design](assets/High_Level_Design_v4.png)
+
+This project follows a Model-View-Controller (MVC) design pattern and utilizes various AWS services to enable a scalable, secure, and AI-integrated platform. The architecture is divided into three main components:
+
+
+### User Authentication and Verification
+
+#### AWS Cognito
+- Handles **user registration and authentication**.
+- Uses a **Cognito User Pool** to manage user credentials and metadata.
+- A **pre-signup Lambda trigger** checks if the email belongs to the `@rit.edu` domain. Invalid emails are rejected during sign-up.
+
+#### Pre-Signup Lambda Trigger
+- A **serverless Lambda function** that validates if the user email is an RIT email before allowing sign-up.
+
+#### API Gateway
+- Acts as the **API layer** between frontend and backend.
+- Handles token-based **authentication** and routes requests for creating, updating, and deleting posts.
+
+#### Backend API in Docker
+- Dockerized Python 3.12 backend application.
+- Requirements installed and **CA certificate bundle** added for secure DocumentDB connections.
+- Exposes the application on port `8080`.
+
+
+### Content Delivery and AI Moderation
+
+#### CloudFront & S3
+- **Amazon CloudFront** distributes static content (HTML, JS, CSS) from **S3** with low latency.
+- Users access images via **temporary pre-signed S3 URLs**.
+
+#### AWS Comprehend (Text Moderation)
+- Scans user-submitted post descriptions for offensive or inappropriate text.
+- Approved content is stored in the database.
+
+#### AWS Rekognition (Image Moderation)
+- Analyzes uploaded images to detect **unsafe, explicit, or violent content**.
+- Images passing moderation are allowed in posts.
+
+#### Gemini / OpenAI Embedding API
+- Converts text descriptions into **semantic vector embeddings**.
+- Enables **context-aware semantic search** based on vector similarity.
+
+
+### Backend Architecture
+
+#### Virtual Private Cloud (VPC)
+- Isolated cloud network with the following setup (configurable):
+  - CIDR Block: `10.0.0.0/16`
+  - **2 Private Subnets**: `10.0.4.0/24`, `10.0.5.0/24`
+  - **2 Public Subnets**: `10.0.1.0/24`, `10.0.2.0/24`
+  - Availability Zones: `us-east-2a`, `us-east-2b`
+- **DocumentDB** is hosted in a private subnet for security.
+
+#### NAT Gateways
+- Located in public subnets to allow **private subnets** to access the internet securely.
+
+#### Internal Application Load Balancer (ALB)
+- Balances internal traffic between API Gateway and ECS tasks.
+- VPC Link enables traffic ingress from API Gateway to the internal ALB.
+
+#### ECS on Fargate
+- Backend is deployed using **AWS Fargate** to eliminate the need for server provisioning.
+- **Task Definition**:
+  - Specifies container details like image URI, resources, and environment variables.
+- **ECS Service**:
+  - Manages task lifecycle and autoscaling based on **CPU and memory utilization**.
+
+#### DocumentDB (MongoDB-Compatible)
+- Used for storing user information and post content.
+- Selected over DynamoDB to support **vector indexing** for semantic search.
+
